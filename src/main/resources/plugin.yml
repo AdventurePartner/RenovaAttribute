@@ -1,0 +1,23 @@
+name: RenovaAttribute
+version: '${version}'
+main: org.renova.renovaattribute.RenovaAttribute
+api-version: '1.21.10'
+author: AiYo
+description: Entity attribute system with Lua formulas and MythicMobs integration
+depend:
+  - AyCore
+softdepend:
+  - MythicMobs
+commands:
+  renovaattribute:
+    description: Manage RenovaAttribute
+    usage: /renovaattribute <info|reload>
+    aliases:
+      - ra
+permissions:
+  renovaattribute.admin:
+    description: Allows all RenovaAttribute administration commands
+    default: op
+  renovaattribute.info:
+    description: Allows viewing entity attributes
+    default: true

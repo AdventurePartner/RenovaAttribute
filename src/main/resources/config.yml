@@ -1,0 +1,63 @@
+# 调试日志
+debug: false
+
+# 属性定义与快照缓存
+attributes:
+  # 内建属性命名空间固定为 renova；自定义属性文件可单独声明 namespace。
+  namespace: renova
+  custom-directory: attributes/custom
+
+# 装备描述属性源
+equipment-lore:
+  enabled: true
+  refresh-delay-ticks: 1
+  priority: 100
+
+# 临时属性源
+buffs:
+  cleanup-period-ticks: 20
+  priority: 200
+
+# 伤害计算
+damage:
+  enabled: true
+  use-vanilla-base-damage: true
+  defense-constant: 100.0
+  critical-hits: true
+  true-damage: true
+  lifesteal: true
+  physical-causes:
+    - ENTITY_ATTACK
+    - ENTITY_SWEEP_ATTACK
+    - PROJECTILE
+  magic-causes:
+    - MAGIC
+    - INDIRECT_MAGIC
+    - SONIC_BOOM
+    - DRAGON_BREATH
+
+# 同步到原版 AttributeInstance
+vanilla-sync:
+  max-health: true
+  movement-speed: true
+
+# Lua 公式沙箱
+lua:
+  max-instructions-per-execution: 50000
+
+# MythicMobs 集成
+mythicmobs:
+  enabled: true
+  # MythicMobs 的 mob 节点示例：
+  # RenovaAttribute:
+  #   physical-damage: 20
+  #   critical-chance:
+  #     flat: 0.15
+  # 标量值使用 SET；子节点支持 set/base/flat/percent/multiply 或 mode + value。
+  config-node: RenovaAttribute
+  # 低于装备 Lore，高于原版 baseline；标量 SET 后装备仍能继续叠加。
+  source-priority: 50
+  register-placeholders: true
+  register-mechanics: true
+  register-condition: true
+  process-damage: true

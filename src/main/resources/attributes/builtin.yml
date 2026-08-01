@@ -1,0 +1,115 @@
+# 代码只使用稳定的 internal 键，display-name 可自由修改。
+attributes:
+  max-health:
+    display-name: '生命值'
+    category: VITAL
+    default-value: 0.0
+    min-value: 1.0
+    max-value: 2048.0
+    format: NUMBER
+    vanilla-attribute: MAX_HEALTH
+    lore-mode: FLAT
+    lore-percent-value: false
+
+  physical-damage:
+    display-name: '物理伤害'
+    category: PHYSICAL
+    default-value: 0.0
+    min-value: 0.0
+    format: NUMBER
+    lore-mode: FLAT
+    lore-percent-value: false
+
+  magic-damage:
+    display-name: '法术伤害'
+    category: MAGIC
+    default-value: 0.0
+    min-value: 0.0
+    format: NUMBER
+    lore-mode: FLAT
+    lore-percent-value: false
+
+  damage-boost:
+    display-name: '伤害提升'
+    category: OFFENSE
+    default-value: 0.0
+    min-value: -1.0
+    format: PERCENT
+    lore-mode: FLAT
+    lore-percent-value: true
+
+  physical-defense:
+    display-name: '物理防御'
+    category: DEFENSE
+    default-value: 0.0
+    min-value: 0.0
+    format: NUMBER
+    lore-mode: FLAT
+    lore-percent-value: false
+
+  magic-defense:
+    display-name: '法术防御'
+    category: DEFENSE
+    default-value: 0.0
+    min-value: 0.0
+    format: NUMBER
+    lore-mode: FLAT
+    lore-percent-value: false
+
+  true-damage:
+    display-name: '真实伤害'
+    category: OFFENSE
+    default-value: 0.0
+    min-value: 0.0
+    format: NUMBER
+    lore-mode: FLAT
+    lore-percent-value: false
+
+  critical-chance:
+    display-name: '暴击率'
+    category: OFFENSE
+    default-value: 0.0
+    min-value: 0.0
+    max-value: 1.0
+    format: PERCENT
+    lore-mode: FLAT
+    lore-percent-value: true
+
+  critical-damage:
+    display-name: '暴击伤害'
+    category: OFFENSE
+    default-value: 0.5
+    min-value: 0.0
+    format: PERCENT
+    lore-mode: FLAT
+    lore-percent-value: true
+
+  lifesteal:
+    display-name: '吸血值'
+    category: OFFENSE
+    default-value: 0.0
+    min-value: 0.0
+    max-value: 1.0
+    format: PERCENT
+    lore-mode: FLAT
+    lore-percent-value: true
+
+  movement-speed:
+    display-name: '速度'
+    category: UTILITY
+    default-value: 0.0
+    min-value: 0.0
+    max-value: 1.0
+    format: NUMBER
+    vanilla-attribute: MOVEMENT_SPEED
+    lore-mode: FLAT
+    lore-percent-value: false
+
+  max-mana:
+    display-name: '魔力值'
+    category: VITAL
+    default-value: 100.0
+    min-value: 0.0
+    format: NUMBER
+    lore-mode: FLAT
+    lore-percent-value: false

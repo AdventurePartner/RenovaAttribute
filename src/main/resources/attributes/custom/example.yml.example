@@ -1,0 +1,15 @@
+# 将本文件复制或重命名为 *.yml 后会作为自定义属性加载。
+internal: cooldown-reduction
+display-name: '冷却缩减'
+category: UTILITY
+default-value: 0.0
+min-value: 0.0
+max-value: 0.9
+format: PERCENT
+lore-mode: FLAT
+lore-percent-value: true
+depends-on:
+  - renova:max-mana
+formula: |
+  local mana = context.get('renova:max-mana')
+  return math.min(0.9, context.current + mana * 0.0005)
