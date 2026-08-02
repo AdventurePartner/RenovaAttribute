@@ -32,7 +32,6 @@ damage:
     - PROJECTILE
   magic-causes:
     - MAGIC
-    - INDIRECT_MAGIC
     - SONIC_BOOM
     - DRAGON_BREATH
 

@@ -40,7 +40,7 @@ dependencies {
 
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
-    testRuntimeOnly("org.purpurmc.purpur:purpur-api:1.21.10-R0.1-SNAPSHOT")
+    testImplementation("org.purpurmc.purpur:purpur-api:1.21.10-R0.1-SNAPSHOT")
 }
 
 kotlin {

@@ -48,6 +48,9 @@ object ResourceLoader {
             lorePatternsFile = it
         }
 
+        if (ConfigMigrator.migrate(configFile)) {
+            plugin.logger.info("Migrated damage cause INDIRECT_MAGIC to MAGIC in config.yml")
+        }
         val preparedConfig = RenovaConfig(YamlConfiguration.loadConfiguration(configFile))
         val preparedMessages = Messages.prepare(messageFile)
         val customDirectory = File(plugin.dataFolder, preparedConfig.customAttributeDirectory)
