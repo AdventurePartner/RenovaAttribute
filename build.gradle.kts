@@ -33,7 +33,12 @@ repositories {
 dependencies {
     compileOnly("org.purpurmc.purpur:purpur-api:1.21.10-R0.1-SNAPSHOT")
     compileOnly("com.aystudio.core:AyCore:1.4.5-BETA")
-    compileOnly("io.lumine:Mythic:5.9.0")
+    // MythicMobs API 编译基线：5.11.2 developer dist（Maven release）。
+    // 该构件的 Placeholder 工厂已返回 types.* 新接口，与 5.13+ 发行版 API 形态一致；
+    // 最低运行时要求 MythicMobs 5.11。构件内 LumineUtils 引用仍是旧包名 io.lumine.utils，
+    // 而发行版 plugin jar 已 relocate 到 io.lumine.mythic.bukkit.utils，
+    // 故下方 shadowJar 统一 relocate 对齐发行版包名。
+    compileOnly("io.lumine:Mythic:5.11.2")
     compileOnly("io.lumine:LumineUtils:1.21-SNAPSHOT")
 
     implementation("org.luaj:luaj-jse:3.0.1")
@@ -74,6 +79,7 @@ tasks.test {
 tasks.withType<ShadowJar>().configureEach {
     archiveClassifier.set("")
     archiveFileName.set("RenovaAttribute-${project.version}.jar")
+    relocate("io.lumine.utils", "io.lumine.mythic.bukkit.utils")
     relocate("kotlin", "org.renova.renovaattribute.lib.kotlin")
     relocate("org.jetbrains", "org.renova.renovaattribute.lib.jetbrains")
     relocate("org.luaj", "org.renova.renovaattribute.lib.luaj")
