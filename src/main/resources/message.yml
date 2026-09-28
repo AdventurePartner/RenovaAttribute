@@ -1,12 +1,22 @@
+# 消息文案。颜色码使用传统 & 格式（如 &a 绿色、&c 红色、&7 灰色、&e 黄色、&f 白色、&6 金色）。
+# 所有 command 段的消息发出前都会自动附加 prefix。
 prefix: '&6[RenovaAttribute] &r'
 command:
+  # 执行命令但缺少权限时的提示。
   no-permission: '&c没有权限执行该命令。'
+  # 控制台执行了仅玩家可用的命令（如 /ra info）时的提示。
   player-only: '&c该命令只能由玩家执行。'
+  # /ra reload 成功后的提示。
   reloaded: '&a配置、属性定义与 Lore 规则已重新加载。'
+  # /ra reload 失败时的提示（配置会回滚到重载前状态）。
   reload-failed: '&c重载失败，请查看控制台。'
+  # 无参数或子命令未知时显示的用法列表；{label} 替换为实际命令标签（renovaattribute 或 ra）。
   usage:
     - '&e/{label} info [属性]'
     - '&e/{label} reload'
+  # /ra info 查询了不存在的属性键时的提示；{attribute} 替换为查询的键。
   unknown-attribute: '&c不存在属性：&f{attribute}'
+  # /ra info 无参数时输出的标题行；{entity} 替换为实体名称。
   info-header: '&e{entity} &7的属性：'
+  # /ra info 每个属性行的格式；{name} 替换为属性显示名，{value} 替换为按 format 格式化后的数值。
   info-line: '&7- &f{name}&7: &a{value}'
