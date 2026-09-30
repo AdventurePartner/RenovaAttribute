@@ -40,11 +40,6 @@ object Messages {
         "Missing message key: $key"
     }
 
-    fun list(key: String): List<String> {
-        require(config.isList(key)) { "Message key $key must be a list" }
-        return config.getStringList(key).map(::color)
-    }
-
     fun format(key: String, values: Map<String, Any?> = emptyMap()): String =
         color(replace(raw(key), values))
 

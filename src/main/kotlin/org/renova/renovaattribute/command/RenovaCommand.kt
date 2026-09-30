@@ -12,20 +12,40 @@ import org.renova.renovaattribute.config.Messages
 import org.renova.renovaattribute.core.AttributeRegistry
 import org.renova.renovaattribute.core.AttributeServiceImpl
 import org.renova.renovaattribute.damage.DamageDebug
-import java.util.Locale
 
 class RenovaCommand : CommandExecutor, TabCompleter {
+    private enum class SubCommand(val id: String, val permission: String) {
+        INFO("info", "renovaattribute.info"),
+        RELOAD("reload", "renovaattribute.admin"),
+        DEBUG("debug", "renovaattribute.admin"),
+        ;
+
+        fun allows(sender: CommandSender): Boolean = sender.hasPermission(permission)
+
+        companion object {
+            fun of(id: String?): SubCommand? = entries.firstOrNull { it.id.equals(id, true) }
+        }
+    }
+
     override fun onCommand(
         sender: CommandSender,
         command: Command,
         label: String,
         args: Array<out String>,
     ): Boolean {
-        when (args.firstOrNull()?.lowercase(Locale.ROOT)) {
-            "reload" -> reload(sender)
-            "info" -> info(sender, args.drop(1))
-            "debug" -> debug(sender, label, args.drop(1))
-            else -> usage(sender, label)
+        val subCommand = SubCommand.of(args.firstOrNull())
+        if (subCommand == null) {
+            help(sender, label)
+            return true
+        }
+        if (!subCommand.allows(sender)) {
+            sender.sendMessage(Messages.prefixed("command.no-permission"))
+            return true
+        }
+        when (subCommand) {
+            SubCommand.INFO -> info(sender, args.drop(1))
+            SubCommand.RELOAD -> reload(sender)
+            SubCommand.DEBUG -> debug(sender, label, args.drop(1))
         }
         return true
     }
@@ -35,33 +55,34 @@ class RenovaCommand : CommandExecutor, TabCompleter {
         command: Command,
         alias: String,
         args: Array<out String>,
-    ): List<String> = when (args.size) {
-        1 -> listOf("info", "reload", "debug").filter { it.startsWith(args[0], true) }
-        2 -> when {
-            args[0].equals("info", true) -> AttributeRegistry.definitions().map { it.key.toString() }
+    ): List<String> {
+        if (args.size == 1) {
+            return (SubCommand.entries.filter { it.allows(sender) }.map { it.id } + "help")
+                .filter { it.startsWith(args[0], true) }
+        }
+        val subCommand = SubCommand.of(args[0])?.takeIf { it.allows(sender) } ?: return emptyList()
+        return when {
+            args.size == 2 && subCommand == SubCommand.INFO -> AttributeRegistry.definitions()
+                .map { it.key.toString() }
                 .filter { it.startsWith(args[1], true) }
-            args[0].equals("debug", true) -> listOf("damage").filter { it.startsWith(args[1], true) }
+            args.size == 2 && subCommand == SubCommand.DEBUG -> listOf("damage").filter { it.startsWith(args[1], true) }
+            args.size == 3 && subCommand == SubCommand.DEBUG && args[1].equals("damage", true) ->
+                Bukkit.getOnlinePlayers().map(Player::getName).filter { it.startsWith(args[2], true) }
             else -> emptyList()
         }
-        3 -> if (args[0].equals("debug", true) && args[1].equals("damage", true)) {
-            Bukkit.getOnlinePlayers().map(Player::getName).filter { it.startsWith(args[2], true) }
-        } else {
-            emptyList()
-        }
-        else -> emptyList()
     }
 
-    private fun usage(sender: CommandSender, label: String) {
-        Messages.list("command.usage")
-            .map { it.replace("{label}", label) }
-            .forEach(sender::sendMessage)
-    }
-
-    private fun reload(sender: CommandSender) {
-        if (!sender.hasPermission("renovaattribute.admin")) {
+    private fun help(sender: CommandSender, label: String) {
+        val allowed = SubCommand.entries.filter { it.allows(sender) }
+        if (allowed.isEmpty()) {
             sender.sendMessage(Messages.prefixed("command.no-permission"))
             return
         }
+        sender.sendMessage(Messages.format("command.help.header"))
+        allowed.forEach { sender.sendMessage(Messages.format("command.help.${it.id}", mapOf("label" to label))) }
+    }
+
+    private fun reload(sender: CommandSender) {
         runCatching(RenovaAttribute.instance::reloadPlugin)
             .onSuccess { sender.sendMessage(Messages.prefixed("command.reloaded")) }
             .onFailure { error ->
@@ -75,12 +96,8 @@ class RenovaCommand : CommandExecutor, TabCompleter {
     }
 
     private fun debug(sender: CommandSender, label: String, args: List<String>) {
-        if (!sender.hasPermission("renovaattribute.admin")) {
-            sender.sendMessage(Messages.prefixed("command.no-permission"))
-            return
-        }
         if (!args.firstOrNull().equals("damage", true)) {
-            usage(sender, label)
+            help(sender, label)
             return
         }
         val target = when (val name = args.getOrNull(1)) {
@@ -98,10 +115,6 @@ class RenovaCommand : CommandExecutor, TabCompleter {
     }
 
     private fun info(sender: CommandSender, args: List<String>) {
-        if (!sender.hasPermission("renovaattribute.info")) {
-            sender.sendMessage(Messages.prefixed("command.no-permission"))
-            return
-        }
         val player = sender as? Player
         if (player == null) {
             sender.sendMessage(Messages.prefixed("command.player-only"))
