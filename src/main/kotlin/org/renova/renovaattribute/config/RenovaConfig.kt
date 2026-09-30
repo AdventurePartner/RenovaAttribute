@@ -6,8 +6,10 @@ import org.renova.renovaattribute.damage.BuiltinPriorities
 import org.renova.renovaattribute.damage.DamageSettings
 import org.renova.renovaattribute.damage.ScriptErrorPolicy
 import org.renova.renovaattribute.damage.VanillaReduction
+import org.renova.renovaattribute.i18n.I18n
 
 class RenovaConfig(config: FileConfiguration) {
+    val language = if (config.isSet("language")) string(config, "language") else I18n.DEFAULT_LANGUAGE
     val debug = boolean(config, "debug")
 
     val namespace = string(config, "attributes.namespace")
@@ -66,6 +68,9 @@ class RenovaConfig(config: FileConfiguration) {
     )
 
     init {
+        require(language.matches(Regex("[A-Za-z0-9_-]+"))) {
+            "language may only contain letters, digits, '_' and '-'"
+        }
         require(namespace.matches(Regex("[a-z0-9.-]+"))) {
             "attributes.namespace contains invalid characters"
         }

@@ -1,3 +1,6 @@
+# 语言文件，对应 language/<名称>.yml
+language: zh_CN
+
 # 调试日志
 debug: false
 

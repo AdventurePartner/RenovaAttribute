@@ -1,5 +1,6 @@
 package org.renova.renovaattribute.command
 
+import com.aystudio.core.bukkit.util.common.TextUtil
 import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
@@ -8,10 +9,10 @@ import org.bukkit.command.TabCompleter
 import org.bukkit.entity.Player
 import org.renova.renovaattribute.RenovaAttribute
 import org.renova.renovaattribute.api.AttributeKey
-import org.renova.renovaattribute.config.Messages
 import org.renova.renovaattribute.core.AttributeRegistry
 import org.renova.renovaattribute.core.AttributeServiceImpl
 import org.renova.renovaattribute.damage.DamageDebug
+import org.renova.renovaattribute.i18n.I18n
 
 class RenovaCommand : CommandExecutor, TabCompleter {
     private enum class SubCommand(val id: String, val permission: String) {
@@ -39,7 +40,7 @@ class RenovaCommand : CommandExecutor, TabCompleter {
             return true
         }
         if (!subCommand.allows(sender)) {
-            sender.sendMessage(Messages.prefixed("command.no-permission"))
+            I18n.send(sender, "command.no-permission")
             return true
         }
         when (subCommand) {
@@ -75,23 +76,25 @@ class RenovaCommand : CommandExecutor, TabCompleter {
     private fun help(sender: CommandSender, label: String) {
         val allowed = SubCommand.entries.filter { it.allows(sender) }
         if (allowed.isEmpty()) {
-            sender.sendMessage(Messages.prefixed("command.no-permission"))
+            I18n.send(sender, "command.no-permission")
             return
         }
-        sender.sendMessage(Messages.format("command.help.header"))
-        allowed.forEach { sender.sendMessage(Messages.format("command.help.${it.id}", mapOf("label" to label))) }
+        val values = mapOf("label" to label)
+        I18n.send(sender, "command.help.header", values)
+        allowed.forEach { I18n.send(sender, "command.help.${it.id}", values) }
+        I18n.send(sender, "command.help.footer", values)
     }
 
     private fun reload(sender: CommandSender) {
         runCatching(RenovaAttribute.instance::reloadPlugin)
-            .onSuccess { sender.sendMessage(Messages.prefixed("command.reloaded")) }
+            .onSuccess { I18n.send(sender, "command.reloaded") }
             .onFailure { error ->
                 RenovaAttribute.instance.logger.log(
                     java.util.logging.Level.SEVERE,
                     "Failed to reload RenovaAttribute",
                     error,
                 )
-                sender.sendMessage(Messages.prefixed("command.reload-failed"))
+                I18n.send(sender, "command.reload-failed")
             }
     }
 
@@ -102,49 +105,43 @@ class RenovaCommand : CommandExecutor, TabCompleter {
         }
         val target = when (val name = args.getOrNull(1)) {
             null -> sender as? Player ?: run {
-                sender.sendMessage(Messages.prefixed("command.player-only"))
+                I18n.send(sender, "command.player-only")
                 return
             }
             else -> Bukkit.getPlayerExact(name) ?: run {
-                sender.sendMessage(Messages.prefixed("command.player-not-found", mapOf("player" to name)))
+                I18n.send(sender, "command.player-not-found", mapOf("player" to name))
                 return
             }
         }
         val key = if (DamageDebug.toggle(sender, target.uniqueId)) "command.debug-enabled" else "command.debug-disabled"
-        sender.sendMessage(Messages.prefixed(key, mapOf("player" to target.name)))
+        I18n.send(sender, key, mapOf("player" to target.name))
     }
 
     private fun info(sender: CommandSender, args: List<String>) {
         val player = sender as? Player
         if (player == null) {
-            sender.sendMessage(Messages.prefixed("command.player-only"))
+            I18n.send(sender, "command.player-only")
             return
         }
         val snapshot = AttributeServiceImpl.snapshot(player)
-        if (args.isNotEmpty()) {
-            val key = AttributeKey.parse(args[0], AttributeRegistry.defaultNamespace)
-            val definition = AttributeRegistry[key]
+        val definitions = if (args.isEmpty()) {
+            I18n.send(sender, "command.info-header", mapOf("entity" to player.name))
+            AttributeRegistry.definitions()
+        } else {
+            val definition = AttributeRegistry[AttributeKey.parse(args[0], AttributeRegistry.defaultNamespace)]
             if (definition == null) {
-                sender.sendMessage(
-                    Messages.prefixed("command.unknown-attribute", mapOf("attribute" to args[0])),
-                )
+                I18n.send(sender, "command.unknown-attribute", mapOf("attribute" to args[0]))
                 return
             }
-            sender.sendMessage(
-                Messages.format(
-                    "command.info-line",
-                    mapOf("name" to definition.displayName, "value" to definition.format(snapshot[key])),
-                ),
-            )
-            return
+            listOf(definition)
         }
-
-        sender.sendMessage(Messages.format("command.info-header", mapOf("entity" to player.name)))
-        AttributeRegistry.definitions().forEach { definition ->
-            sender.sendMessage(
-                Messages.format(
-                    "command.info-line",
-                    mapOf("name" to definition.displayName, "value" to definition.format(snapshot[definition.key])),
+        definitions.forEach { definition ->
+            I18n.send(
+                sender,
+                "command.info-line",
+                mapOf(
+                    "name" to TextUtil.formatHexColor(definition.displayName),
+                    "value" to definition.format(snapshot[definition.key]),
                 ),
             )
         }

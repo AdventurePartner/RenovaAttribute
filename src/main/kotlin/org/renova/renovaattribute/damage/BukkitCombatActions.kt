@@ -1,5 +1,6 @@
 package org.renova.renovaattribute.damage
 
+import com.aystudio.core.bukkit.util.common.TextUtil
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.attribute.Attribute
 import org.bukkit.damage.DamageSource
@@ -7,7 +8,6 @@ import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.renova.renovaattribute.api.AttributeKey
 import org.renova.renovaattribute.api.StatValue
-import org.renova.renovaattribute.config.Messages
 import org.renova.renovaattribute.source.BuffSource
 import org.renova.renovaattribute.util.RenovaLog
 import org.bukkit.damage.DamageType as VanillaDamageType
@@ -89,13 +89,13 @@ internal object BukkitCombatActions : CombatActions {
     }
 
     override fun sendMessage(target: CombatParticipant, text: String) {
-        target.entity?.takeIf { it.isValid }?.sendMessage(Messages.colorize(text))
+        target.entity?.takeIf { it.isValid }?.sendMessage(TextUtil.formatHexColor(text))
     }
 
     override fun sendActionBar(target: CombatParticipant, text: String) {
         val player = target.entity as? Player ?: return
         if (player.isOnline) {
-            player.sendActionBar(legacy.deserialize(Messages.colorize(text)))
+            player.sendActionBar(legacy.deserialize(TextUtil.formatHexColor(text)))
         }
     }
 

@@ -4,7 +4,7 @@ import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
-import org.renova.renovaattribute.config.Messages
+import org.renova.renovaattribute.i18n.I18n
 import java.text.DecimalFormat
 import java.util.UUID
 
@@ -48,7 +48,7 @@ object DamageDebug {
 
     private fun format(session: DamageSession, trace: List<TraceEntry>): List<String> {
         val lines = ArrayList<String>(trace.size + 2)
-        lines += Messages.format(
+        lines += I18n.lines(
             "debug.header",
             mapOf(
                 "attacker" to session.attacker.name,
@@ -70,9 +70,9 @@ object DamageDebug {
                 "micros" to entry.nanos / 1_000,
                 "error" to entry.error,
             )
-            lines += Messages.format(if (entry.error == null) "debug.entry" else "debug.entry-error", values)
+            lines += I18n.lines(if (entry.error == null) "debug.entry" else "debug.entry-error", values)
         }
-        lines += Messages.format(
+        lines += I18n.lines(
             "debug.result",
             mapOf(
                 "outcome" to (session.outcome?.name ?: "-"),
@@ -88,12 +88,12 @@ object DamageDebug {
         val parts = ArrayList<String>()
         fun numeric(label: String, from: Double, to: Double) {
             if (from != to) {
-                parts += "${Messages.raw("debug.labels.$label")} ${number.format(from)}→${number.format(to)}"
+                parts += "${I18n.text("debug.labels.$label")} ${number.format(from)}→${number.format(to)}"
             }
         }
         fun flag(label: String, from: Boolean, to: Boolean) {
             if (from != to) {
-                parts += "${Messages.raw("debug.labels.$label")} $from→$to"
+                parts += "${I18n.text("debug.labels.$label")} $from→$to"
             }
         }
         numeric("damage", before.damage, after.damage)
@@ -105,6 +105,6 @@ object DamageDebug {
         numeric("true-damage", before.trueDamage, after.trueDamage)
         numeric("lifesteal", before.lifesteal, after.lifesteal)
         flag("cancelled", before.cancelled, after.cancelled)
-        return parts.joinToString(", ").ifEmpty { Messages.raw("debug.no-change") }
+        return parts.joinToString(", ").ifEmpty { I18n.text("debug.no-change") }
     }
 }
