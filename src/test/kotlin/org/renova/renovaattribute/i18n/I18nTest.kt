@@ -107,8 +107,8 @@ class I18nTest {
         ).map { "debug.labels.$it" }
         val keys = listOf(
             "command.no-permission", "command.player-only", "command.reloaded", "command.reload-failed",
-            "command.help.header", "command.help.info", "command.help.reload", "command.help.debug",
-            "command.help.footer", "command.unknown-attribute", "command.info-header", "command.info-line",
+            "command.help.player", "command.help.admin", "command.unknown-attribute",
+            "command.info-header", "command.info-line",
             "command.player-not-found", "command.debug-enabled", "command.debug-disabled",
             "debug.header", "debug.entry", "debug.entry-error", "debug.result", "debug.no-change",
         ) + labels

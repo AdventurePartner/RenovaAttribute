@@ -14,11 +14,14 @@ import org.renova.renovaattribute.core.AttributeServiceImpl
 import org.renova.renovaattribute.damage.DamageDebug
 import org.renova.renovaattribute.i18n.I18n
 
+private const val ADMIN_PERMISSION = "renovaattribute.admin"
+private const val INFO_PERMISSION = "renovaattribute.info"
+
 class RenovaCommand : CommandExecutor, TabCompleter {
     private enum class SubCommand(val id: String, val permission: String) {
-        INFO("info", "renovaattribute.info"),
-        RELOAD("reload", "renovaattribute.admin"),
-        DEBUG("debug", "renovaattribute.admin"),
+        INFO("info", INFO_PERMISSION),
+        RELOAD("reload", ADMIN_PERMISSION),
+        DEBUG("debug", ADMIN_PERMISSION),
         ;
 
         fun allows(sender: CommandSender): Boolean = sender.hasPermission(permission)
@@ -74,15 +77,12 @@ class RenovaCommand : CommandExecutor, TabCompleter {
     }
 
     private fun help(sender: CommandSender, label: String) {
-        val allowed = SubCommand.entries.filter { it.allows(sender) }
-        if (allowed.isEmpty()) {
-            I18n.send(sender, "command.no-permission")
-            return
+        val key = when {
+            sender.hasPermission(ADMIN_PERMISSION) -> "command.help.admin"
+            sender.hasPermission(INFO_PERMISSION) -> "command.help.player"
+            else -> "command.no-permission"
         }
-        val values = mapOf("label" to label)
-        I18n.send(sender, "command.help.header", values)
-        allowed.forEach { I18n.send(sender, "command.help.${it.id}", values) }
-        I18n.send(sender, "command.help.footer", values)
+        I18n.send(sender, key, mapOf("label" to label))
     }
 
     private fun reload(sender: CommandSender) {

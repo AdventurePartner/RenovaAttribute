@@ -9,13 +9,18 @@ command:
   player-only: '{prefix}&c该命令只能由玩家执行。'
   reloaded: '{prefix}&a配置、属性定义与 Lore 规则已重新加载。'
   reload-failed: '{prefix}&c重载失败，请查看控制台。'
-  # 只列出发送者有权限的子命令；{label} 为玩家实际输入的命令名
+  # {label} 为玩家实际输入的命令名
   help:
-    header: '&6RenovaAttribute &7命令帮助：'
-    info: '&e/{label} info [属性] &7- 查看自己的属性'
-    reload: '&e/{label} reload &7- 重载配置、属性定义与 Lore 规则'
-    debug: '&e/{label} debug damage [玩家] &7- 开关玩家的伤害追踪'
-    footer: ''
+    # 普通玩家（有 renovaattribute.info）
+    player:
+      - '&6RenovaAttribute &7命令帮助：'
+      - '&e/{label} info [属性] &7- 查看自己的属性'
+    # 管理员（有 renovaattribute.admin）
+    admin:
+      - '&6RenovaAttribute &7命令帮助：'
+      - '&e/{label} info [属性] &7- 查看自己的属性'
+      - '&e/{label} reload &7- 重载配置、属性定义与 Lore 规则'
+      - '&e/{label} debug damage [玩家] &7- 开关玩家的伤害追踪'
   unknown-attribute: '{prefix}&c不存在属性：&f{attribute}'
   info-header: '&e{entity} &7的属性：'
   info-line: '&7- &f{name}&7: &a{value}'
