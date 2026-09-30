@@ -1,38 +1,54 @@
 # 语言文件，对应 language/<名称>.yml
 language: zh_CN
 
-# 调试日志
+# 调试日志：开启后插件输出调试信息到控制台。
 debug: false
 
 # 属性定义与快照缓存
 attributes:
-  # 内建属性命名空间固定为 renova；自定义属性文件可单独声明 namespace。
+  # 内建属性的命名空间，固定为 renova（属性键格式为 "命名空间:名称"，如 renova:physical-damage）。
+  # 自定义属性文件可单独声明 namespace 覆盖。
   namespace: renova
+  # 自定义属性文件目录（相对本插件数据文件夹），目录下所有 *.yml 都会作为属性定义加载。
   custom-directory: attributes/custom
 
-# 装备描述属性源
+# 装备 Lore 属性源：从装备描述文本中读取属性。
 equipment-lore:
+  # 是否启用装备 Lore 属性读取。
   enabled: true
+  # 装备栏发生变化后，延迟多少 tick 重新计算属性快照（给快速连续的装备切换去重）。
   refresh-delay-ticks: 1
+  # 属性来源优先级：数值越大越后合并（越高优先级）。高优先级的 SET 值可整体覆盖低优先级的全部贡献。
   priority: 100
 
-# 临时属性源
+# 临时属性（Buff）源：由 MythicMobs 机制或 API 写入的限时属性。
 buffs:
+  # 每隔多少 tick 扫描并清理一次已过期的临时属性，随后刷新受影响实体。
   cleanup-period-ticks: 20
+  # Buff 来源优先级：默认高于装备 Lore（100），同一属性的 SET 可覆盖装备贡献。
   priority: 200
 
-# 伤害计算
+# 伤害计算管线：改写原版与 MythicMobs 的伤害事件。
 damage:
+  # 伤害计算总开关；关闭后所有伤害保持原版行为，属性中的伤害类数值不生效。
   enabled: true
+  # 基础伤害是否包含原版伤害：开启时 基础伤害 = 原版伤害 + 属性伤害；关闭时只使用属性伤害。
   use-vanilla-base-damage: true
+  # 防御减伤公式的常数 K：最终伤害 = 伤害 * K / (防御 + K)。数值越大，防御收益衰减越慢。
   defense-constant: 100.0
+  # 暴击开关：命中判定 roll < 攻方暴击率 时，伤害额外乘以 (1 + 暴击伤害)。
   critical-hits: true
+  # 真实伤害开关：攻方的真实伤害属性是否生效（不进入伤害事件，下一 tick 直接扣除生命值）。
   true-damage: true
+  # 吸血开关：攻方按本次实际扣血量（普通 + 真实）乘以吸血比例回复生命。
   lifesteal: true
+  # 归类为物理伤害的原版 DamageCause 列表：命中这些类型时使用 物理伤害/物理防御 参与计算。
   physical-causes:
     - ENTITY_ATTACK
     - ENTITY_SWEEP_ATTACK
     - PROJECTILE
+  # 归类为法术伤害的原版 DamageCause 列表：使用 法术伤害/法术防御 参与计算。
+  # 两个列表不允许重叠；不在任何列表中的伤害类型本插件不处理。
   magic-causes:
     - MAGIC
     - SONIC_BOOM
@@ -58,32 +74,43 @@ damage:
     true-damage: 100
     lifesteal: 200
 
-# 同步到原版 AttributeInstance
+# 同步到原版 AttributeInstance：让原版机制（如自然回血、移动）感知属性变化。
 vanilla-sync:
+  # 将 renova:max-health 的结果同步到原版 generic.max_health（瞬态 modifier，不落盘；上限变化时按比例保留当前生命）。
   max-health: true
+  # 将 renova:movement-speed 的结果同步到原版 generic.movement_speed。
   movement-speed: true
 
-# Lua 公式与战斗脚本沙箱
+# Lua 沙箱：用于自定义属性的 formula 字段（属性公式）与 combat 字段（战斗脚本）。
 lua:
+  # 单次公式执行允许的最大指令数（字节码数），超出即中断并报错，防止公式死循环卡服。必须大于 0。
   max-instructions-per-execution: 50000
   # 每个战斗脚本处理器单次执行的指令上限
   max-instructions-per-combat-script: 20000
 
 # MythicMobs 集成
 mythicmobs:
+  # MythicMobs 集成总开关；关闭后怪物配置节点、机制、条件、占位符、伤害处理全部停用。
   enabled: true
-  # MythicMobs 的 mob 节点示例：
-  # RenovaAttribute:
-  #   physical-damage: 20
-  #   critical-chance:
-  #     flat: 0.15
-  # 标量值使用 SET；子节点支持 set/base/flat/percent/multiply 或 mode + value。
+  # 在 MythicMobs 怪物配置中读取属性的自定义节点名。怪物 yml 的 Mobs 段写法示例：
+  #   ZombieKing:
+  #     Type: ZOMBIE
+  #     RenovaAttribute:
+  #       physical-damage: 20        # 标量值使用 SET 模式
+  #       critical-chance:
+  #         flat: 0.15               # 子节点支持 set/base/flat/percent/multiply 或 mode + value
   config-node: RenovaAttribute
-  # 低于装备 Lore，高于原版 baseline；标量 SET 后装备仍能继续叠加。
+  # 怪物配置属性源的优先级：默认低于装备 Lore（100）、高于原版基线；
+  # 标量 SET 后装备 Lore 仍能继续往上叠加。
   source-priority: 50
+  # 是否注册 MythicMobs 占位符：<caster.attr:属性键> 与 <target.attr:属性键>。
   register-placeholders: true
+  # 是否注册 MythicMobs 机制：setattribute / addattribute / modifyattribute。
   register-mechanics: true
+  # 是否注册 MythicMobs 条件：attribute（支持 >=、<=、区间等比较）。
   register-condition: true
+  # 是否让 MythicMobs 技能伤害走本插件的伤害管线（暴击、防御、吸血等与普通攻击同一套计算）。
+  # MythicMobs 伤害解析不出类型时默认按物理处理。
   process-damage: true
   # 技能伤害设置了 ignoreArmor=true 时，是否同时跳过内建的属性防御减伤
   ignore-armor-bypasses-defense: false

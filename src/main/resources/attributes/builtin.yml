@@ -1,5 +1,25 @@
-# 代码只使用稳定的 internal 键，display-name 可自由修改。
+# ============================================================
+# 内置属性定义
+# - 本文件的键（如 max-health）是代码使用的稳定内部 ID，不可修改；
+#   display-name 可自由修改（装备 Lore 匹配与 /ra info 显示都用它）。
+# - 字段说明：
+#   display-name        显示名，装备 Lore 中匹配「{display-name}: 数值」。
+#   category            分类，仅用于展示分组，可选值：
+#                       VITAL / PHYSICAL / MAGIC / OFFENSE / DEFENSE / UTILITY。
+#   default-value       无任何来源贡献时该属性的取值基线。
+#   min-value           数值下限（可省略表示不限制），最终值会钳制在 [min, max]。
+#   max-value           数值上限（可省略表示不限制）。
+#   format              展示格式：NUMBER = 数值；PERCENT = 百分比（显示时数值 * 100 加 %）。
+#                       注意内部一律存储小数（0.15 表示 +15%）。
+#   vanilla-attribute   关联的原版属性，属性结果会同步到原版属性系统（见 config.yml vanilla-sync）。
+#   lore-mode           Lore 中「属性名: 数值」（无标签）默认按哪种修饰模式计入：
+#                       BASE / FLAT / PERCENT / MULTIPLY。
+#   lore-percent-value  Lore 中的数字是否按百分比解读（写入 15 表示 0.15）。
+# 数值合并公式：((set + base + flat) * (1 + percent) * multiplier)，随后钳制到范围内。
+# ============================================================
 attributes:
+  # 生命值上限：原版基础值（20）作为 base 读入，装备/Buff 提供的是额外生命。
+  # 最终值同步到原版 generic.max_health，上限变化时按比例保留当前生命。
   max-health:
     display-name: '生命值'
     category: VITAL
@@ -11,6 +31,7 @@ attributes:
     lore-mode: FLAT
     lore-percent-value: false
 
+  # 物理伤害：普通攻击、弹射物等物理伤害的基础伤害加值（与原版伤害相加，见 config.yml damage 段）。
   physical-damage:
     display-name: '物理伤害'
     category: PHYSICAL
@@ -20,6 +41,7 @@ attributes:
     lore-mode: FLAT
     lore-percent-value: false
 
+  # 法术伤害：MAGIC 类伤害（含 MythicMobs 技能伤害）的基础伤害加值。
   magic-damage:
     display-name: '法术伤害'
     category: MAGIC
@@ -29,6 +51,7 @@ attributes:
     lore-mode: FLAT
     lore-percent-value: false
 
+  # 伤害提升：全局最终增伤乘区，所有类型伤害统一乘以 (1 + 本值)；可为负（减伤）。
   damage-boost:
     display-name: '伤害提升'
     category: OFFENSE
@@ -38,6 +61,7 @@ attributes:
     lore-mode: FLAT
     lore-percent-value: true
 
+  # 物理防御：参与物理伤害减免公式 最终伤害 = 伤害 * K / (防御 + K)，K 为 damage.defense-constant。
   physical-defense:
     display-name: '物理防御'
     category: DEFENSE
@@ -47,6 +71,7 @@ attributes:
     lore-mode: FLAT
     lore-percent-value: false
 
+  # 法术防御：参与法术伤害减免，公式同物理防御。
   magic-defense:
     display-name: '法术防御'
     category: DEFENSE
@@ -56,6 +81,7 @@ attributes:
     lore-mode: FLAT
     lore-percent-value: false
 
+  # 真实伤害：无视防御的附加伤害，不进入伤害事件，下一 tick 直接扣除目标生命值；计入吸血基数。
   true-damage:
     display-name: '真实伤害'
     category: OFFENSE
@@ -65,6 +91,7 @@ attributes:
     lore-mode: FLAT
     lore-percent-value: false
 
+  # 暴击率：命中判定 roll < 暴击率 时触发暴击；内部 0.0 ~ 1.0 对应 0% ~ 100%。
   critical-chance:
     display-name: '暴击率'
     category: OFFENSE
@@ -75,6 +102,7 @@ attributes:
     lore-mode: FLAT
     lore-percent-value: true
 
+  # 暴击伤害：触发暴击时伤害乘以 (1 + 本值)；默认 0.5 即暴击造成 150% 伤害。
   critical-damage:
     display-name: '暴击伤害'
     category: OFFENSE
@@ -84,6 +112,7 @@ attributes:
     lore-mode: FLAT
     lore-percent-value: true
 
+  # 吸血值：按本次实际扣血量（普通 + 真实伤害部分）的比例回复自身生命，0.0 ~ 1.0 对应 0% ~ 100%。
   lifesteal:
     display-name: '吸血值'
     category: OFFENSE
@@ -94,6 +123,7 @@ attributes:
     lore-mode: FLAT
     lore-percent-value: true
 
+  # 速度：原版基础速度作为 base 读入，本属性贡献为速度增量，最终值同步到原版 generic.movement_speed。
   movement-speed:
     display-name: '速度'
     category: UTILITY
@@ -105,6 +135,7 @@ attributes:
     lore-mode: FLAT
     lore-percent-value: false
 
+  # 魔力值上限：纯数值属性，插件本身无魔力消耗逻辑，供其他插件/公式（如冷却缩减）读取使用。
   max-mana:
     display-name: '魔力值'
     category: VITAL
