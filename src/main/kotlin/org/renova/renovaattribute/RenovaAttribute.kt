@@ -7,6 +7,9 @@ import org.renova.renovaattribute.command.RenovaCommand
 import org.renova.renovaattribute.config.RenovaConfig
 import org.renova.renovaattribute.config.ResourceLoader
 import org.renova.renovaattribute.core.AttributeServiceImpl
+import org.renova.renovaattribute.damage.CombatCooldowns
+import org.renova.renovaattribute.damage.CombatRegistry
+import org.renova.renovaattribute.damage.DamageDebug
 import org.renova.renovaattribute.damage.DamageMetadataStore
 import org.renova.renovaattribute.damage.DamagePipeline
 import org.renova.renovaattribute.damage.VanillaDamageListener
@@ -18,6 +21,7 @@ import org.renova.renovaattribute.lore.EquipmentLoreSource
 import org.renova.renovaattribute.source.BuffSource
 import org.renova.renovaattribute.sync.VanillaAttributeSource
 import org.renova.renovaattribute.sync.VanillaAttributeSync
+import org.renova.renovaattribute.util.RenovaLog
 import java.util.logging.Level
 
 class RenovaAttribute : AyPlugin() {
@@ -36,6 +40,7 @@ class RenovaAttribute : AyPlugin() {
 
     override fun onEnable() {
         instance = this
+        RenovaLog.logger = logger
         runCatching {
             currentConfig = ResourceLoader.load(this)
             initialize(currentConfig)
@@ -55,6 +60,10 @@ class RenovaAttribute : AyPlugin() {
         equipmentChangeListener.shutdown()
         vanillaDamageListener.shutdown()
         DamageMetadataStore.clear()
+        DamagePipeline.traceSink = null
+        DamageDebug.clear()
+        CombatCooldowns.shared.clear()
+        CombatRegistry.reset()
         VanillaAttributeSync.removeAll()
         AttributeServiceImpl.shutdown()
         LuaFormulaEvaluator.clear()
@@ -95,6 +104,7 @@ class RenovaAttribute : AyPlugin() {
             return
         }
         VanillaAttributeSync.initialize(this)
+        DamagePipeline.traceSink = DamageDebug::publish
         configure(config)
         server.pluginManager.registerEvents(VanillaAttributeSync, this)
         server.pluginManager.registerEvents(vanillaDamageListener, this)
@@ -160,14 +170,7 @@ class RenovaAttribute : AyPlugin() {
         BuffSource.configure(config.buffPriority, config.buffCleanupPeriodTicks)
         VanillaAttributeSync.configure(config.syncMaxHealth, config.syncMovementSpeed)
         vanillaDamageListener.configure(config.physicalCauses, config.magicCauses)
-        DamagePipeline.configure(
-            enabled = config.damageEnabled,
-            useVanillaBaseDamage = config.useVanillaBaseDamage,
-            defenseConstant = config.defenseConstant,
-            criticalHits = config.criticalHits,
-            trueDamage = config.trueDamage,
-            lifesteal = config.lifesteal,
-        )
+        DamagePipeline.configure(config.damageSettings)
     }
 
     private fun applyReloadedConfiguration(config: RenovaConfig) {

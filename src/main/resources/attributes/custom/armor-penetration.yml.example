@@ -1,0 +1,17 @@
+# 护甲穿透：攻击时按比例无视目标的物理/法术防御。
+# 去掉 .example 后缀即可启用；Lore 写法示例：护甲穿透: 30%
+internal: armor-penetration
+display-name: '护甲穿透'
+category: OFFENSE
+default-value: 0.0
+min-value: 0.0
+max-value: 1.0
+format: PERCENT
+lore-mode: FLAT
+lore-percent-value: true
+combat:
+  - trigger: ATTACK
+    # 必须排在内建防御处理器（默认 400）之前，才能影响防御减伤
+    priority: 350
+    script: |
+      ctx:set_defense(ctx:defense() * (1 - value))

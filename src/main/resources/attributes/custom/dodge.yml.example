@@ -1,0 +1,21 @@
+# 闪避：受到攻击时按几率完全躲开这次伤害。
+# 去掉 .example 后缀即可启用；Lore 写法示例：闪避: 15%
+internal: dodge
+display-name: '闪避'
+category: DEFENSE
+default-value: 0.0
+min-value: 0.0
+max-value: 0.8
+format: PERCENT
+lore-mode: FLAT
+lore-percent-value: true
+combat:
+  - trigger: DEFENSE
+    # 越早越好：取消后后续处理器都不再执行
+    priority: 50
+    script: |
+      if ctx:chance(value) then
+        ctx:cancel()
+        ctx:actionbar(ctx.defender, '&a闪避！')
+        ctx:actionbar(ctx.attacker, '&7攻击被闪避了')
+      end

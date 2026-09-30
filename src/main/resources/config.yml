@@ -34,15 +34,37 @@ damage:
     - MAGIC
     - SONIC_BOOM
     - DRAGON_BREATH
+  # 写回伤害后原版减伤的处理方式：
+  #   KEEP          保留原版护甲、抗性效果与保护附魔（与属性防御叠加）
+  #   IGNORE_ARMOR  忽略原版护甲
+  #   IGNORE_ALL    忽略原版护甲、抗性效果与保护附魔（仍保留盾牌格挡与伤害吸收）
+  vanilla-reduction: KEEP
+  # 横扫攻击时，属性伤害部分乘以该系数（原版横扫伤害不受影响）
+  sweep-ratio: 1.0
+  # 按原版攻击冷却缩放属性伤害部分：0.2 + 0.8 × 蓄力²
+  scale-by-attack-cooldown: false
+  # 战斗脚本报错时：SKIP_HANDLER 跳过该处理器继续计算；VANILLA 本次命中退回原版伤害
+  script-error-policy: SKIP_HANDLER
+  # 内建处理器优先级，数字越小越先执行；自定义战斗脚本可插在它们之间
+  builtin-priorities:
+    # 计算阶段
+    damage-boost: 100
+    critical: 200
+    defense: 400
+    # 结算后阶段
+    true-damage: 100
+    lifesteal: 200
 
 # 同步到原版 AttributeInstance
 vanilla-sync:
   max-health: true
   movement-speed: true
 
-# Lua 公式沙箱
+# Lua 公式与战斗脚本沙箱
 lua:
   max-instructions-per-execution: 50000
+  # 每个战斗脚本处理器单次执行的指令上限
+  max-instructions-per-combat-script: 20000
 
 # MythicMobs 集成
 mythicmobs:
@@ -60,3 +82,5 @@ mythicmobs:
   register-mechanics: true
   register-condition: true
   process-damage: true
+  # 技能伤害设置了 ignoreArmor=true 时，是否同时跳过内建的属性防御减伤
+  ignore-armor-bypasses-defense: false

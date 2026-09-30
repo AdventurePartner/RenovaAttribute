@@ -1,7 +1,6 @@
 package org.renova.renovaattribute.damage
 
-import org.bukkit.Bukkit
-import org.bukkit.attribute.Attribute
+import org.bukkit.entity.HumanEntity
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Projectile
 import org.bukkit.event.EventHandler
@@ -9,82 +8,79 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
-import org.renova.renovaattribute.RenovaAttribute
 import java.util.IdentityHashMap
 
 class VanillaDamageListener : Listener {
-    private data class ProcessedDamage(
-        val attacker: LivingEntity,
-        val target: LivingEntity,
-        val result: DamageResult,
-    )
+    private val sessions = IdentityHashMap<EntityDamageEvent, DamageSession>()
 
-    private val results = IdentityHashMap<EntityDamageEvent, ProcessedDamage>()
     fun configure(
-        physicalCauses: Set<org.bukkit.event.entity.EntityDamageEvent.DamageCause>,
-        magicCauses: Set<org.bukkit.event.entity.EntityDamageEvent.DamageCause>,
+        physicalCauses: Set<EntityDamageEvent.DamageCause>,
+        magicCauses: Set<EntityDamageEvent.DamageCause>,
     ) {
         DamageTypeResolver.configure(physicalCauses, magicCauses)
     }
 
     fun shutdown() {
-        results.clear()
+        sessions.values.forEach(DamagePipeline::discard)
+        sessions.clear()
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     fun onDamage(event: EntityDamageByEntityEvent) {
-        if (!DamagePipeline.enabled) {
+        if (SecondaryDamage.active) {
             return
         }
         val target = event.entity as? LivingEntity ?: return
-        if (target.hasMetadata("skill-damage")) {
+        if (target.hasMetadata(SKILL_DAMAGE_METADATA)) {
+            DamageMetadataStore.peek(skillTokens(target))
+                ?.takeIf { it.outcome == CalculationOutcome.APPLIED }
+                ?.let { applyVanillaReduction(event, it.settings.vanillaReduction) }
+            return
+        }
+        if (!DamagePipeline.enabled) {
             return
         }
         val attacker = resolveAttacker(event) ?: return
         val type = DamageTypeResolver.resolve(event.cause) ?: return
-        val result = DamagePipeline.calculate(
-            DamagePipeline.createContext(attacker, target, event.damage, type),
+        if (!CombatRuntime.onPrimaryThread()) {
+            return
+        }
+        val session = DamagePipeline.createSession(
+            attacker = CombatRuntime.participant(attacker),
+            defender = CombatRuntime.participant(target),
+            type = type,
+            cause = event.cause,
+            origin = DamageOrigin.VANILLA,
+            projectile = event.damager is Projectile,
+            originalDamage = event.damage,
+            environment = CombatRuntime.environment,
+            attackCooldown = attackCooldown(event, attacker),
+            traced = DamageDebug.isTraced(attacker, target),
         )
-        event.damage = result.normalDamage
-        results[event] = ProcessedDamage(attacker, target, result)
+        when (DamagePipeline.calculate(session)) {
+            CalculationOutcome.FALLBACK -> {
+                DamagePipeline.discard(session)
+                return
+            }
+            CalculationOutcome.CANCELLED -> event.isCancelled = true
+            CalculationOutcome.APPLIED -> {
+                event.damage = session.normalDamage()
+                applyVanillaReduction(event, session.settings.vanillaReduction)
+            }
+        }
+        sessions[event] = session
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     fun onDamageMonitor(event: EntityDamageEvent) {
         val target = event.entity as? LivingEntity ?: return
-        val processed = results.remove(event)
-        val pending = if (processed == null && target.hasMetadata("skill-damage")) {
-            val tokens = buildList<Any> {
-                target.getMetadata("skill-damage").forEach { metadata ->
-                    metadata.value()?.let(::add)
-                }
-            }
-            DamageMetadataStore.consume(
-                tokens,
-            )
+        val mythicSession = if (target.hasMetadata(SKILL_DAMAGE_METADATA)) {
+            DamageMetadataStore.consume(skillTokens(target))
         } else {
             null
         }
-        if (event.isCancelled) {
-            return
-        }
-        when {
-            processed != null -> applyPostDamage(
-                processed.attacker,
-                processed.target,
-                processed.result,
-                event.finalDamage.coerceIn(0.0, target.health),
-            )
-            pending != null -> {
-                val attacker = Bukkit.getEntity(pending.attackerId) as? LivingEntity ?: return
-                applyPostDamage(
-                    attacker,
-                    target,
-                    pending.result,
-                    event.finalDamage.coerceIn(0.0, target.health),
-                )
-            }
-        }
+        val session = sessions.remove(event) ?: mythicSession ?: return
+        CombatRuntime.finish(session, event.isCancelled, event.finalDamage.coerceIn(0.0, target.health))
     }
 
     private fun resolveAttacker(event: EntityDamageByEntityEvent): LivingEntity? = when (val damager = event.damager) {
@@ -93,27 +89,41 @@ class VanillaDamageListener : Listener {
         else -> null
     }
 
-    private fun applyPostDamage(
-        attacker: LivingEntity,
-        target: LivingEntity,
-        result: DamageResult,
-        normalHealthLoss: Double,
-    ) {
-        RenovaAttribute.instance.server.scheduler.runTask(
-            RenovaAttribute.instance,
-            Runnable {
-                var trueHealthLoss = 0.0
-                if (result.trueDamage > 0.0 && target.isValid && !target.isDead) {
-                    val beforeTrueDamage = target.health
-                    target.health = (beforeTrueDamage - result.trueDamage).coerceAtLeast(0.0)
-                    trueHealthLoss = beforeTrueDamage - target.health
+    private fun attackCooldown(event: EntityDamageByEntityEvent, attacker: LivingEntity): Double {
+        if (event.damager !== attacker) {
+            return 1.0
+        }
+        if (event.cause != EntityDamageEvent.DamageCause.ENTITY_ATTACK &&
+            event.cause != EntityDamageEvent.DamageCause.ENTITY_SWEEP_ATTACK
+        ) {
+            return 1.0
+        }
+        return (attacker as? HumanEntity)?.attackCooldown?.toDouble() ?: 1.0
+    }
+
+    private fun skillTokens(target: LivingEntity): List<Any> =
+        target.getMetadata(SKILL_DAMAGE_METADATA).mapNotNull { it.value() }
+
+    companion object {
+        private const val SKILL_DAMAGE_METADATA = "skill-damage"
+
+        /** Must run after `event.damage` was set, because setting the base damage recomputes the modifiers. */
+        @Suppress("DEPRECATION")
+        internal fun applyVanillaReduction(event: EntityDamageEvent, mode: VanillaReduction) {
+            val modifiers = when (mode) {
+                VanillaReduction.KEEP -> return
+                VanillaReduction.IGNORE_ARMOR -> listOf(EntityDamageEvent.DamageModifier.ARMOR)
+                VanillaReduction.IGNORE_ALL -> listOf(
+                    EntityDamageEvent.DamageModifier.ARMOR,
+                    EntityDamageEvent.DamageModifier.RESISTANCE,
+                    EntityDamageEvent.DamageModifier.MAGIC,
+                )
+            }
+            modifiers.forEach { modifier ->
+                if (event.isApplicable(modifier)) {
+                    event.setDamage(modifier, 0.0)
                 }
-                val healAmount = (normalHealthLoss + trueHealthLoss) * result.lifestealRatio
-                if (healAmount > 0.0 && attacker.isValid && !attacker.isDead) {
-                    val maxHealth = attacker.getAttribute(Attribute.MAX_HEALTH)?.value ?: attacker.health
-                    attacker.health = (attacker.health + healAmount).coerceAtMost(maxHealth)
-                }
-            },
-        )
+            }
+        }
     }
 }

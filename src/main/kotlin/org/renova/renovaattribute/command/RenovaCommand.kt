@@ -1,5 +1,6 @@
 package org.renova.renovaattribute.command
 
+import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -10,6 +11,7 @@ import org.renova.renovaattribute.api.AttributeKey
 import org.renova.renovaattribute.config.Messages
 import org.renova.renovaattribute.core.AttributeRegistry
 import org.renova.renovaattribute.core.AttributeServiceImpl
+import org.renova.renovaattribute.damage.DamageDebug
 import java.util.Locale
 
 class RenovaCommand : CommandExecutor, TabCompleter {
@@ -22,9 +24,8 @@ class RenovaCommand : CommandExecutor, TabCompleter {
         when (args.firstOrNull()?.lowercase(Locale.ROOT)) {
             "reload" -> reload(sender)
             "info" -> info(sender, args.drop(1))
-            else -> Messages.list("command.usage")
-                .map { it.replace("{label}", label) }
-                .forEach(sender::sendMessage)
+            "debug" -> debug(sender, label, args.drop(1))
+            else -> usage(sender, label)
         }
         return true
     }
@@ -35,14 +36,25 @@ class RenovaCommand : CommandExecutor, TabCompleter {
         alias: String,
         args: Array<out String>,
     ): List<String> = when (args.size) {
-        1 -> listOf("info", "reload").filter { it.startsWith(args[0], true) }
-        2 -> if (args[0].equals("info", true)) {
-            AttributeRegistry.definitions().map { it.key.toString() }
+        1 -> listOf("info", "reload", "debug").filter { it.startsWith(args[0], true) }
+        2 -> when {
+            args[0].equals("info", true) -> AttributeRegistry.definitions().map { it.key.toString() }
                 .filter { it.startsWith(args[1], true) }
+            args[0].equals("debug", true) -> listOf("damage").filter { it.startsWith(args[1], true) }
+            else -> emptyList()
+        }
+        3 -> if (args[0].equals("debug", true) && args[1].equals("damage", true)) {
+            Bukkit.getOnlinePlayers().map(Player::getName).filter { it.startsWith(args[2], true) }
         } else {
             emptyList()
         }
         else -> emptyList()
+    }
+
+    private fun usage(sender: CommandSender, label: String) {
+        Messages.list("command.usage")
+            .map { it.replace("{label}", label) }
+            .forEach(sender::sendMessage)
     }
 
     private fun reload(sender: CommandSender) {
@@ -60,6 +72,29 @@ class RenovaCommand : CommandExecutor, TabCompleter {
                 )
                 sender.sendMessage(Messages.prefixed("command.reload-failed"))
             }
+    }
+
+    private fun debug(sender: CommandSender, label: String, args: List<String>) {
+        if (!sender.hasPermission("renovaattribute.admin")) {
+            sender.sendMessage(Messages.prefixed("command.no-permission"))
+            return
+        }
+        if (!args.firstOrNull().equals("damage", true)) {
+            usage(sender, label)
+            return
+        }
+        val target = when (val name = args.getOrNull(1)) {
+            null -> sender as? Player ?: run {
+                sender.sendMessage(Messages.prefixed("command.player-only"))
+                return
+            }
+            else -> Bukkit.getPlayerExact(name) ?: run {
+                sender.sendMessage(Messages.prefixed("command.player-not-found", mapOf("player" to name)))
+                return
+            }
+        }
+        val key = if (DamageDebug.toggle(sender, target.uniqueId)) "command.debug-enabled" else "command.debug-disabled"
+        sender.sendMessage(Messages.prefixed(key, mapOf("player" to target.name)))
     }
 
     private fun info(sender: CommandSender, args: List<String>) {

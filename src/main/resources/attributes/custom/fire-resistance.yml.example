@@ -1,0 +1,20 @@
+# 火焰抗性：减少 MythicMobs 技能中 element=FIRE 的伤害。
+# ctx.element 是 Mythic damage 技能的 element 参数原样字符串，原版伤害为 nil。
+# 去掉 .example 后缀即可启用；Lore 写法示例：火焰抗性: 25%
+internal: fire-resistance
+display-name: '火焰抗性'
+category: DEFENSE
+default-value: 0.0
+min-value: 0.0
+max-value: 1.0
+format: PERCENT
+lore-mode: FLAT
+lore-percent-value: true
+combat:
+  - trigger: DEFENSE
+    # 排在内建防御（400）之后，作为独立乘区
+    priority: 450
+    script: |
+      if ctx.element == 'FIRE' then
+        ctx:mul_damage(1 - value)
+      end

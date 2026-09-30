@@ -15,6 +15,13 @@ internal object LuaExecution {
         chunkName: String,
     ): Varargs {
         val state = globals.running.state
+        val previousHook = state.hookfunc
+        val previousCount = state.hookcount
+        val previousBytecodes = state.bytecodes
+        val previousCall = state.hookcall
+        val previousLine = state.hookline
+        val previousReturn = state.hookrtrn
+        val previousInHook = state.inhook
         val budgetHook = object : ZeroArgFunction() {
             override fun call(): LuaValue {
                 throw ScriptAbortError("instruction limit exceeded")
@@ -26,19 +33,28 @@ internal object LuaExecution {
         state.hookcall = false
         state.hookline = false
         state.hookrtrn = false
+        state.inhook = false
         try {
             return function.invoke(arguments)
         } catch (error: ScriptAbortError) {
             throw LuaFormulaException("$chunkName: ${error.message}", error)
         } catch (error: LuaError) {
             throw LuaFormulaException("$chunkName: ${error.message}", error)
+        } catch (error: StackOverflowError) {
+            throw LuaFormulaException("$chunkName: stack overflow", error)
+        } catch (error: LuaFormulaException) {
+            throw error
+        } catch (error: RuntimeException) {
+            // Tail calls into Kotlin callbacks run outside LuaClosure's own error wrapping.
+            throw LuaFormulaException("$chunkName: ${error.message}", error)
         } finally {
-            state.hookfunc = null
-            state.hookcount = 0
-            state.hookcall = false
-            state.hookline = false
-            state.hookrtrn = false
-            state.inhook = false
+            state.hookfunc = previousHook
+            state.hookcount = previousCount
+            state.bytecodes = previousBytecodes
+            state.hookcall = previousCall
+            state.hookline = previousLine
+            state.hookrtrn = previousReturn
+            state.inhook = previousInHook
         }
     }
 

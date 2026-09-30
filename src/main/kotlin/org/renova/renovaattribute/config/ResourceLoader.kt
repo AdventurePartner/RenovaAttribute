@@ -3,6 +3,7 @@ package org.renova.renovaattribute.config
 import org.bukkit.configuration.file.YamlConfiguration
 import org.renova.renovaattribute.RenovaAttribute
 import org.renova.renovaattribute.core.AttributeRegistry
+import org.renova.renovaattribute.damage.CombatRegistry
 import org.renova.renovaattribute.formula.LuaFormulaEvaluator
 import org.renova.renovaattribute.lore.LoreParser
 import java.io.File
@@ -14,6 +15,18 @@ object ResourceLoader {
         val registry: AttributeRegistry.PreparedState,
         val lua: LuaFormulaEvaluator.PreparedState,
         val lore: LoreParser.PreparedState,
+        val combat: CombatRegistry.PreparedState,
+    )
+
+    private val EXAMPLES = listOf(
+        "attributes/custom/example.yml.example",
+        "attributes/custom/armor-penetration.yml.example",
+        "attributes/custom/dodge.yml.example",
+        "attributes/custom/critical-resistance.yml.example",
+        "attributes/custom/execute.yml.example",
+        "attributes/custom/thorns.yml.example",
+        "attributes/custom/fire-resistance.yml.example",
+        "attributes/custom/pvp-reduction.yml.example",
     )
 
     @Volatile
@@ -38,12 +51,7 @@ object ResourceLoader {
         plugin.saveResource("attributes/builtin.yml", "attributes/builtin.yml", false) {
             builtinFile = it
         }
-        plugin.saveResource(
-            "attributes/custom/example.yml.example",
-            "attributes/custom/example.yml.example",
-            false,
-            null,
-        )
+        EXAMPLES.forEach { path -> plugin.saveResource(path, path, false, null) }
         plugin.saveResource("lore_patterns.yml", "lore_patterns.yml", false) {
             lorePatternsFile = it
         }
@@ -66,12 +74,19 @@ object ResourceLoader {
             preparedRegistry.namespace,
         )
         val preparedLore = LoreParser.prepare(lorePatternsFile, preparedRegistry.definitions.values)
+        val preparedCombat = CombatRegistry.prepare(
+            preparedRegistry.definitions.values,
+            plugin.dataFolder,
+            preparedConfig.maxCombatLuaInstructions,
+            preparedConfig.builtinPriorities,
+        )
         return PreparedResources(
             preparedConfig,
             preparedMessages,
             preparedRegistry,
             preparedLua,
             preparedLore,
+            preparedCombat,
         )
     }
 
@@ -82,6 +97,7 @@ object ResourceLoader {
         AttributeRegistry.commit(prepared.registry)
         LuaFormulaEvaluator.commit(prepared.lua)
         LoreParser.commit(prepared.lore)
+        CombatRegistry.commit(prepared.combat)
         active = prepared
         return previous
     }

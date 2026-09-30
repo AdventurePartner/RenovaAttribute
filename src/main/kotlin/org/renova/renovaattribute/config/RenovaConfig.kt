@@ -2,6 +2,10 @@ package org.renova.renovaattribute.config
 
 import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.event.entity.EntityDamageEvent
+import org.renova.renovaattribute.damage.BuiltinPriorities
+import org.renova.renovaattribute.damage.DamageSettings
+import org.renova.renovaattribute.damage.ScriptErrorPolicy
+import org.renova.renovaattribute.damage.VanillaReduction
 
 class RenovaConfig(config: FileConfiguration) {
     val debug = boolean(config, "debug")
@@ -25,10 +29,18 @@ class RenovaConfig(config: FileConfiguration) {
     val physicalCauses = causes(config, "damage.physical-causes")
     val magicCauses = causes(config, "damage.magic-causes")
 
+    // Keys added after the first release are optional so existing config.yml files keep loading.
+    val vanillaReduction = optionalEnum(config, "damage.vanilla-reduction", VanillaReduction.KEEP)
+    val sweepRatio = optionalNonNegativeDouble(config, "damage.sweep-ratio", 1.0)
+    val scaleByAttackCooldown = optionalBoolean(config, "damage.scale-by-attack-cooldown", false)
+    val scriptErrorPolicy = optionalEnum(config, "damage.script-error-policy", ScriptErrorPolicy.SKIP_HANDLER)
+    val builtinPriorities = builtinPriorities(config, "damage.builtin-priorities")
+
     val syncMaxHealth = boolean(config, "vanilla-sync.max-health")
     val syncMovementSpeed = boolean(config, "vanilla-sync.movement-speed")
 
     val maxLuaInstructions = positiveInt(config, "lua.max-instructions-per-execution")
+    val maxCombatLuaInstructions = optionalPositiveInt(config, "lua.max-instructions-per-combat-script", 20_000)
 
     val mythicEnabled = boolean(config, "mythicmobs.enabled")
     val mythicConfigNode = string(config, "mythicmobs.config-node")
@@ -37,6 +49,21 @@ class RenovaConfig(config: FileConfiguration) {
     val mythicMechanics = boolean(config, "mythicmobs.register-mechanics")
     val mythicCondition = boolean(config, "mythicmobs.register-condition")
     val mythicDamage = boolean(config, "mythicmobs.process-damage")
+    val mythicIgnoreArmorBypassesDefense = optionalBoolean(config, "mythicmobs.ignore-armor-bypasses-defense", false)
+
+    val damageSettings = DamageSettings(
+        enabled = damageEnabled,
+        useVanillaBaseDamage = useVanillaBaseDamage,
+        defenseConstant = defenseConstant,
+        criticalHits = criticalHits,
+        trueDamage = trueDamage,
+        lifesteal = lifesteal,
+        vanillaReduction = vanillaReduction,
+        sweepRatio = sweepRatio,
+        scaleByAttackCooldown = scaleByAttackCooldown,
+        ignoreArmorBypassesDefense = mythicIgnoreArmorBypassesDefense,
+        scriptErrorPolicy = scriptErrorPolicy,
+    )
 
     init {
         require(namespace.matches(Regex("[a-z0-9.-]+"))) {
@@ -82,6 +109,42 @@ class RenovaConfig(config: FileConfiguration) {
         return config.getDouble(path).also {
             require(it.isFinite() && it > 0.0) { "$path must be finite and positive" }
         }
+    }
+
+    private fun optionalBoolean(config: FileConfiguration, path: String, default: Boolean): Boolean =
+        if (config.isSet(path)) boolean(config, path) else default
+
+    private fun optionalPositiveInt(config: FileConfiguration, path: String, default: Int): Int =
+        if (config.isSet(path)) positiveInt(config, path) else default
+
+    private fun optionalNonNegativeDouble(config: FileConfiguration, path: String, default: Double): Double {
+        if (!config.isSet(path)) {
+            return default
+        }
+        require(config.isDouble(path) || config.isInt(path) || config.isLong(path)) { "$path must be a number" }
+        return config.getDouble(path).also {
+            require(it.isFinite() && it >= 0.0) { "$path must be finite and non-negative" }
+        }
+    }
+
+    private inline fun <reified T : Enum<T>> optionalEnum(config: FileConfiguration, path: String, default: T): T {
+        if (!config.isSet(path)) {
+            return default
+        }
+        val value = string(config, path)
+        return enumValues<T>().firstOrNull { it.name.equals(value.replace('-', '_'), true) }
+            ?: throw IllegalArgumentException(
+                "$path must be one of ${enumValues<T>().joinToString { it.name }}",
+            )
+    }
+
+    private fun builtinPriorities(config: FileConfiguration, path: String): BuiltinPriorities {
+        if (!config.isSet(path)) {
+            return BuiltinPriorities()
+        }
+        val section = requireNotNull(config.getConfigurationSection(path)) { "$path must be a section" }
+        val overrides = section.getKeys(false).associateWith { name -> integer(config, "$path.$name") }
+        return BuiltinPriorities.of(overrides)
     }
 
     private fun causes(

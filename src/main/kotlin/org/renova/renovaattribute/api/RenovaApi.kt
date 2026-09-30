@@ -6,4 +6,8 @@ object RenovaApi {
     @JvmStatic
     val attributeService: AttributeService
         get() = AttributeServiceImpl
+
+    @JvmStatic
+    val combat: CombatApi
+        get() = CombatApi
 }

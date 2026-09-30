@@ -1,0 +1,17 @@
+# 暴击抵抗：受到攻击时降低攻击者本次的暴击率。
+# 去掉 .example 后缀即可启用；Lore 写法示例：暴击抵抗: 10%
+internal: critical-resistance
+display-name: '暴击抵抗'
+category: DEFENSE
+default-value: 0.0
+min-value: 0.0
+max-value: 1.0
+format: PERCENT
+lore-mode: FLAT
+lore-percent-value: true
+combat:
+  - trigger: DEFENSE
+    # 必须排在内建暴击处理器（默认 200）之前
+    priority: 190
+    script: |
+      ctx:set_crit_chance(ctx:crit_chance() - value)

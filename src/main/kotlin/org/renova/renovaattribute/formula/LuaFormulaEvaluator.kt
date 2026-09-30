@@ -43,7 +43,7 @@ object LuaFormulaEvaluator : FormulaEvaluator {
             val globals = LuaSandboxFactory.create()
             val environment = LuaSandboxFactory.createEnvironment(globals)
             val script = buildString {
-                appendLine("return function(context)")
+                append("return function(context) ")
                 appendLine(definition.formula)
                 appendLine("end")
             }
@@ -64,6 +64,7 @@ object LuaFormulaEvaluator : FormulaEvaluator {
         )
 
         val values = definitions.associateTo(LinkedHashMap()) { it.key to it.defaultValue }
+        val formulaAttributes = formulaOrder.mapTo(HashSet()) { it.key }
         formulaOrder.forEach { definition ->
             values[definition.key] = definition.clamp(
                 evaluate(
@@ -73,6 +74,9 @@ object LuaFormulaEvaluator : FormulaEvaluator {
                         contribution = StatValue.base(definition.defaultValue),
                         values = values,
                         defaultNamespace = defaultNamespace,
+                        self = definition.key,
+                        dependencies = definition.dependencies,
+                        formulaAttributes = formulaAttributes,
                     ),
                 ),
             )

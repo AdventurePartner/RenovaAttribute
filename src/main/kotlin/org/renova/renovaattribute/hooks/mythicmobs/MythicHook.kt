@@ -5,6 +5,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
 import org.renova.renovaattribute.RenovaAttribute
+import org.renova.renovaattribute.damage.CombatSkills
 import org.renova.renovaattribute.hooks.mythicmobs.mechanic.MythicComponentRegistrar
 
 object MythicHook : Listener {
@@ -33,6 +34,7 @@ object MythicHook : Listener {
         conditionEnabled = false
         componentRegistrar.configure(false, false)
         damageListener.enabled = false
+        CombatSkills.caster = null
         mobListener.configure(false, "RenovaAttribute", 50)
         HandlerList.unregisterAll(RenovaAttribute.instance)
         placeholdersEnabled = false
@@ -86,6 +88,7 @@ object MythicHook : Listener {
         AttributePlaceholder.configure(placeholdersEnabled)
         componentRegistrar.configure(mechanicsEnabled, conditionEnabled)
         damageListener.enabled = enabled && damage
+        CombatSkills.caster = if (enabled) MythicSkillCaster else null
         if (placeholdersEnabled) {
             AttributePlaceholder.register()
         }

@@ -2,6 +2,7 @@ package org.renova.renovaattribute.attribute
 
 import org.renova.renovaattribute.api.AttributeKey
 import org.renova.renovaattribute.api.ModifierMode
+import org.renova.renovaattribute.damage.CombatHandlerSpec
 
 data class AttributeDefinition(
     val key: AttributeKey,
@@ -16,6 +17,7 @@ data class AttributeDefinition(
     val lorePercentValue: Boolean = false,
     val formula: String? = null,
     val dependencies: Set<AttributeKey> = emptySet(),
+    val combat: List<CombatHandlerSpec> = emptyList(),
 ) {
     init {
         require(displayName.isNotBlank()) { "displayName cannot be blank for $key" }

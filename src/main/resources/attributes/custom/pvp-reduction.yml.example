@@ -1,0 +1,18 @@
+# PvP 减伤：受到玩家攻击时减少伤害。
+# 去掉 .example 后缀即可启用；Lore 写法示例：PvP减伤: 20%
+internal: pvp-reduction
+display-name: 'PvP减伤'
+category: DEFENSE
+default-value: 0.0
+min-value: 0.0
+max-value: 1.0
+format: PERCENT
+lore-mode: FLAT
+lore-percent-value: true
+combat:
+  - trigger: DEFENSE
+    priority: 450
+    script: |
+      if ctx.attacker:is_player() then
+        ctx:mul_damage(1 - value)
+      end

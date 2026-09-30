@@ -1,0 +1,19 @@
+# 反伤：受到伤害后，把实际扣血量的一定比例反弹给攻击者。
+# 反弹伤害无视原版护甲，也不会再次触发属性结算，所以两个带反伤的实体互打不会无限反弹。
+# 去掉 .example 后缀即可启用；Lore 写法示例：反伤: 20%
+internal: thorns
+display-name: '反伤'
+category: DEFENSE
+default-value: 0.0
+min-value: 0.0
+format: PERCENT
+lore-mode: FLAT
+lore-percent-value: true
+combat:
+  - trigger: AFTER_DEFENSE
+    priority: 300
+    script: |
+      -- 每 10 tick 最多触发一次，避免高频多段伤害刷屏
+      if ctx.final_damage > 0 and ctx:cooldown(ctx.defender, 'thorns', 10) then
+        ctx:deal_damage(ctx.defender, ctx.attacker, ctx.final_damage * value)
+      end

@@ -12,6 +12,7 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.renova.renovaattribute.RenovaAttribute
 import org.renova.renovaattribute.core.AttributeServiceImpl
+import org.renova.renovaattribute.damage.CombatCooldowns
 import org.renova.renovaattribute.source.BuffSource
 import org.renova.renovaattribute.sync.VanillaAttributeSync
 
@@ -60,6 +61,7 @@ class EntityLifecycleListener : Listener {
 
     private fun cleanup(entity: LivingEntity) {
         BuffSource.discard(entity)
+        CombatCooldowns.shared.discard(entity.uniqueId)
         VanillaAttributeSync.removeModifiers(entity)
         AttributeServiceImpl.invalidate(entity)
     }

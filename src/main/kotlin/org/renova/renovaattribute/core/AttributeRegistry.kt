@@ -7,6 +7,8 @@ import org.renova.renovaattribute.api.ModifierMode
 import org.renova.renovaattribute.attribute.AttributeCategory
 import org.renova.renovaattribute.attribute.AttributeDefinition
 import org.renova.renovaattribute.attribute.AttributeFormat
+import org.renova.renovaattribute.damage.CombatHandlerSpec
+import org.renova.renovaattribute.damage.CombatTrigger
 import java.io.File
 import java.util.Collections
 import java.util.LinkedHashMap
@@ -66,6 +68,9 @@ object AttributeRegistry {
         }
         require(definition.dependencies.isEmpty()) {
             "Runtime attributes without formulas cannot declare dependencies"
+        }
+        require(definition.combat.isEmpty()) {
+            "Runtime attributes cannot declare combat scripts; register a CombatHandler instead"
         }
         val candidateRuntime = LinkedHashMap(runtimeDefinitions)
         candidateRuntime[definition.key] = definition
@@ -200,7 +205,43 @@ object AttributeRegistry {
             lorePercentValue = optionalBoolean(section, "lore-percent-value", false, key),
             formula = formula,
             dependencies = dependencies,
+            combat = if (section.isSet("combat")) parseCombat(section, key, source) else emptyList(),
         )
+    }
+
+    private fun parseCombat(
+        section: ConfigurationSection,
+        key: AttributeKey,
+        source: String,
+    ): List<CombatHandlerSpec> {
+        require(section.isList("combat")) { "combat must be a list for $key in $source" }
+        return section.getList("combat").orEmpty().mapIndexed { index, raw ->
+            val location = "combat[$index] of $key in $source"
+            val entry = raw as? Map<*, *> ?: throw IllegalArgumentException("$location must be a section")
+            val unknown = entry.keys.map(Any?::toString).toSet() - COMBAT_KEYS
+            require(unknown.isEmpty()) { "$location has unknown keys: ${unknown.joinToString()}" }
+            val triggerName = entry["trigger"] as? String
+                ?: throw IllegalArgumentException("$location requires trigger")
+            val trigger = CombatTrigger.parse(triggerName) ?: throw IllegalArgumentException(
+                "$location has unknown trigger '$triggerName' (${CombatTrigger.entries.joinToString()})",
+            )
+            val priority = entry["priority"] as? Int
+                ?: throw IllegalArgumentException("$location requires an integer priority")
+            val script = entry["script"]?.let {
+                it as? String ?: throw IllegalArgumentException("$location script must be a string")
+            }
+            val scriptFile = entry["script-file"]?.let {
+                it as? String ?: throw IllegalArgumentException("$location script-file must be a string")
+            }
+            val runWhenZero = entry["run-when-zero"]?.let {
+                it as? Boolean ?: throw IllegalArgumentException("$location run-when-zero must be a boolean")
+            } ?: false
+            try {
+                CombatHandlerSpec(trigger, priority, script, scriptFile, runWhenZero)
+            } catch (error: IllegalArgumentException) {
+                throw IllegalArgumentException("$location: ${error.message}", error)
+            }
+        }
     }
 
     private fun formulaOrder(
@@ -303,4 +344,6 @@ object AttributeRegistry {
     private fun immutableMap(
         source: Map<AttributeKey, AttributeDefinition>,
     ): Map<AttributeKey, AttributeDefinition> = Collections.unmodifiableMap(LinkedHashMap(source))
+
+    private val COMBAT_KEYS = setOf("trigger", "priority", "script", "script-file", "run-when-zero")
 }

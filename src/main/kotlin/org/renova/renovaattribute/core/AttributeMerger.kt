@@ -7,6 +7,7 @@ import org.renova.renovaattribute.api.AttributeSource
 import org.renova.renovaattribute.api.StatValue
 import org.renova.renovaattribute.formula.FormulaContext
 import org.renova.renovaattribute.formula.LuaFormulaEvaluator
+import org.renova.renovaattribute.util.RenovaLog
 import java.util.LinkedHashMap
 import java.util.Collections
 
@@ -31,18 +32,31 @@ object AttributeMerger {
             values[key] = AttributeRegistry[key]?.clamp(calculated) ?: calculated
         }
 
-        AttributeRegistry.formulaOrder().forEach { definition ->
+        val formulaOrder = AttributeRegistry.formulaOrder()
+        val formulaAttributes = formulaOrder.mapTo(HashSet()) { it.key }
+        formulaOrder.forEach { definition ->
             val contribution = accumulators[definition.key]
                 ?: StatValue.base(definition.defaultValue)
-            val calculated = LuaFormulaEvaluator.evaluate(
-                definition,
-                FormulaContext(
-                    contribution = contribution,
-                    values = values,
-                    defaultNamespace = AttributeRegistry.defaultNamespace,
-                ),
-            )
-            values[definition.key] = definition.clamp(calculated)
+            try {
+                val calculated = LuaFormulaEvaluator.evaluate(
+                    definition,
+                    FormulaContext(
+                        contribution = contribution,
+                        values = values,
+                        defaultNamespace = AttributeRegistry.defaultNamespace,
+                        self = definition.key,
+                        dependencies = definition.dependencies,
+                        formulaAttributes = formulaAttributes,
+                    ),
+                )
+                values[definition.key] = definition.clamp(calculated)
+            } catch (error: RuntimeException) {
+                // Keep the clamped source value so one broken formula cannot poison the whole snapshot.
+                RenovaLog.throttled(
+                    "formula:${definition.key}",
+                    "Formula ${definition.key} failed for entity ${entity.uniqueId}; using its value without the formula: ${error.message}",
+                )
+            }
         }
         return AttributeSnapshot(
             entity.uniqueId,

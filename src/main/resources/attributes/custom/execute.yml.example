@@ -1,0 +1,18 @@
+# 斩杀：目标生命低于 30% 时，本次伤害提高 value 倍（作为独立乘区）。
+# 去掉 .example 后缀即可启用；Lore 写法示例：斩杀: 50%
+internal: execute
+display-name: '斩杀'
+category: OFFENSE
+default-value: 0.0
+min-value: 0.0
+format: PERCENT
+lore-mode: FLAT
+lore-percent-value: true
+combat:
+  - trigger: ATTACK
+    priority: 150
+    script: |
+      local defender = ctx.defender
+      if defender:health() / defender:max_health() < 0.3 then
+        ctx:mul_damage(1 + value)
+      end
