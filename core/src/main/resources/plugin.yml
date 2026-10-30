@@ -1,0 +1,13 @@
+name: RenovaAttribute
+main: org.renova.renovaattribute.RenovaAttribute
+version: '${version}'
+depend:
+  - AyCore
+softdepend:
+  - MythicMobs
+author: AiYo
+api-version: '1.20'
+commands:
+  renovaattribute:
+    aliases:
+      - ra
