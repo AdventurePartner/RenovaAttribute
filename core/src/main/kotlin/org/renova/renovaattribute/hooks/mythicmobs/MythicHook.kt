@@ -61,6 +61,9 @@ object MythicHook : Listener {
         val pluginManager = RenovaAttribute.instance.server.pluginManager
         val mythicMobs = pluginManager.getPlugin("MythicMobs")
         require(mythicMobs?.isEnabled == true) { "MythicMobs is not enabled" }
+        RenovaAttribute.instance.logger.info(
+            "MythicMobs ${mythicMobs.description.version} | placeholders=${AttributePlaceholder.implementation}",
+        )
 
         pluginManager.registerEvents(this, RenovaAttribute.instance)
         pluginManager.registerEvents(mobListener, RenovaAttribute.instance)

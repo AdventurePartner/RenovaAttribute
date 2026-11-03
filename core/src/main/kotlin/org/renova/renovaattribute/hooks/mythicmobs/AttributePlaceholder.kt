@@ -1,51 +1,45 @@
 package org.renova.renovaattribute.hooks.mythicmobs
 
-import io.lumine.mythic.bukkit.MythicBukkit
-import io.lumine.mythic.core.skills.placeholders.PlaceholderMeta
-import io.lumine.mythic.core.skills.placeholders.types.MetaPlaceholder
-import io.lumine.mythic.core.skills.placeholders.types.TargetPlaceholder
-import io.lumine.utils.interfaces.TriFunction
+import org.bukkit.entity.Entity
 import org.renova.renovaattribute.api.AttributeKey
 import org.renova.renovaattribute.core.AttributeRegistry
+import org.renova.renovaattribute.platform.Capabilities
 
 object AttributePlaceholder {
+    private const val GENERIC_REGISTRAR = "org.renova.renovaattribute.compat.mythic.GenericPlaceholderRegistrar"
+
     @Volatile
     private var enabled = true
+
+    // MythicMobs 5.12 起提供按类注册的新占位符 API，MetaPlaceholder / TargetPlaceholder 随之弃用。
+    // 新实现在 compat-mythic 里，探测到它的父类后才按类名加载，5.11 及以下不会链接到它。
+    // lazy 的 lambda 没有期望类型，不写类型参数时 create 会被推断成 LegacyPlaceholderRegistrar 并强转失败。
+    private val registrar: PlaceholderRegistrar by lazy {
+        if (Capabilities.hasClass("io.lumine.mythic.core.skills.placeholders.types.EntityScopedPlaceholder")) {
+            Capabilities.create<PlaceholderRegistrar>(GENERIC_REGISTRAR)
+        } else {
+            LegacyPlaceholderRegistrar
+        }
+    }
+
+    /** The registration used on the running MythicMobs: `generic` (5.12+) or `legacy`. */
+    val implementation: String
+        get() = registrar.name
 
     fun configure(enabled: Boolean) {
         this.enabled = enabled
     }
 
     fun register() {
-        val manager = MythicBukkit.inst().placeholderManager
-        // 直接实现 types.MetaPlaceholder / 构造 types.TargetPlaceholder，
-        // 避开 Placeholder.meta/target 弃用工厂（其方法体内调用
-        // ClassInfo.warnClassIsUsingDeprecatedAPI 触发 MM 启动横幅）。
-        // MetaPlaceholder 与 TargetPlaceholder 的签名在 5.11.2 与 5.13.0 间一致。
-        manager.register(
-            "caster.attr",
-            object : MetaPlaceholder {
-                override fun apply(meta: PlaceholderMeta, argument: String): String {
-                    if (!enabled) {
-                        return "0"
-                    }
-                    val entity = meta.caster.entity.bukkitEntity
-                    return MythicAttributeLookup.get(entity, parseKey(argument)).toString()
-                }
-            },
-        )
-        manager.register(
-            "target.attr",
-            TargetPlaceholder(
-                TriFunction { _, target, argument ->
-                    if (!enabled) {
-                        "0"
-                    } else {
-                        MythicAttributeLookup.get(target.bukkitEntity, parseKey(argument)).toString()
-                    }
-                },
-            ),
-        )
+        registrar.register()
+    }
+
+    /** The attribute named by [argument] on [entity]; null while the placeholders are switched off. */
+    fun lookup(entity: Entity, argument: String): Double? {
+        if (!enabled) {
+            return null
+        }
+        return MythicAttributeLookup.get(entity, parseKey(argument))
     }
 
     private fun parseKey(argument: String): AttributeKey {

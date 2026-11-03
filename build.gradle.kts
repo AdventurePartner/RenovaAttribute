@@ -39,6 +39,7 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":compat-modern"))
     implementation(project(":compat-paper"))
+    implementation(project(":compat-mythic"))
 }
 
 tasks.withType<ShadowJar>().configureEach {

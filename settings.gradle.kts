@@ -29,4 +29,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "RenovaAttribute"
 
-include("core", "compat-modern", "compat-paper")
+include("core", "compat-modern", "compat-paper", "compat-mythic")

@@ -4,12 +4,13 @@
 
 - **服务端**：Spigot、Paper、Purpur，**1.20.1 及以上**（含 1.21.x）。
 - **Java**：字节码为 Java 17。1.20.1–1.20.4 跑在 Java 17 上，1.20.5 起跑在 Java 21 上，两者都能加载。
-- **MythicMobs**（可选）：**5.6 及以上**。本插件用到的 Mythic 接口从 5.6.2 到 5.13.0 签名完全一致，没有按版本区分的代码。
+- **MythicMobs**（可选）：**5.6 及以上**。占位符按 MythicMobs 版本二选一（见下表）；其余用到的 Mythic 接口从 5.6.2 到 5.14.0-SNAPSHOT 签名完全一致。
 
-启动时控制台会打印一行平台选择结果，排查问题时先看这一行：
+启动时控制台会打印平台选择结果，装了 MythicMobs 时还会多一行，排查问题时先看这两行：
 
 ```
 Platform: Paper 1.21.10-R0.1-SNAPSHOT | modifiers=keyed+transient, damage=damage-source, equipment=paper-event, entities=paper, text=adventure
+MythicMobs 5.13.0-aad3f1c9 | placeholders=generic
 ```
 
 ## 工程结构
@@ -19,9 +20,10 @@ Platform: Paper 1.21.10-R0.1-SNAPSHOT | modifiers=keyed+transient, damage=damage
 | `core` | spigot-api 1.20.1、Mythic 5.6.2、AyCore | 全部业务逻辑，以及每项能力的"基线实现"（任何受支持的服务端都能跑） |
 | `compat-modern` | spigot-api 1.21.10 | 比 1.20.1 新、但 Spigot 也有的 API |
 | `compat-paper` | paper-api 1.21.10 | Paper 专有 API |
-| 根工程 | — | 只负责用 shadow 把三个模块合成一个 jar |
+| `compat-mythic` | Mythic-Dist 5.12.0 | MythicMobs 5.12 起的新占位符 API |
+| 根工程 | — | 只负责用 shadow 把四个模块合成一个 jar |
 
-core 只能看到最低版本的 API，误用新版或 Paper 专有 API 会直接编译失败。需要新 API 的代码放进 compat 模块，并在 `core/.../platform/Platform.kt` 里登记一个探测条件。探测按"某个类或方法是否存在"判断，不解析版本号。只有探测通过，才会按类名加载 compat 里的实现类，所以旧服务端永远不会链接到它没有的 API。
+core 只能看到最低版本的 API，误用新版或 Paper 专有 API 会直接编译失败。需要新 API 的代码放进 compat 模块，并在 `core/.../platform/Platform.kt` 里登记一个探测条件。探测按"某个类或方法是否存在"判断，不解析版本号。只有探测通过，才会按类名加载 compat 里的实现类，所以旧服务端永远不会链接到它没有的 API。MythicMobs 是可选依赖，它的探测不在 `Platform.kt`，而在 Mythic 挂钩启用时进行（`core/.../hooks/mythicmobs/AttributePlaceholder.kt`）。
 
 ## 各项能力在不同服务端上的实现
 
@@ -33,6 +35,7 @@ core 只能看到最低版本的 API，误用新版或 Paper 专有 API 会直�
 | 装备变化检测 | `paper-event`：Paper 1.21.4+ | `polling`：物品栏、换手、拾取、右键穿甲、发射器穿甲等事件即时触发，另加 `equipment-lore.poll-interval-ticks` 轮询兜底 |
 | 实体进出世界 | `paper`：Paper 全系 | `bukkit`：生成事件与区块实体加载/卸载事件，另每 30 秒清理一次已消失实体的缓存 |
 | Lore 与 ActionBar 文本 | `adventure`：Paper 全系 | `legacy`：旧版字符串 lore、BungeeCord 组件发送 ActionBar |
+| Mythic 占位符 `placeholders` | `generic`：MythicMobs 5.12+，按类注册。除 `caster.attr` / `target.attr` 外还有 `c.attr`、`trigger.attr`、`parent.attr`、`owner.attr`；支持 `{r=N}` 保留 N 位小数、`{default=..}` 指定实体不存在时的值 | `legacy`：只有 `caster.attr` / `target.attr` |
 
 原版属性（最大生命、移速）一律按注册表 key 查找：1.21.3 把 `GENERIC_*` 常量改了名，`Attribute` 也从 enum 变成了接口。
 

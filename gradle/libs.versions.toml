@@ -11,6 +11,9 @@ paper-api = "1.21.10-R0.1-SNAPSHOT"
 # io.lumine.mythic.bukkit.utils，由根工程 shadowJar 统一 relocate 对齐。
 mythic = "5.6.2"
 lumine-utils = "1.21-SNAPSHOT"
+# compat-mythic 编译下限：新占位符 API（GenericPlaceholder / EntityScopedPlaceholder）从 5.12.0 起提供。
+# 发行版里 LumineUtils 已经是 io.lumine.mythic.bukkit.utils，不受根工程的 relocate 影响。
+mythic-dist = "5.12.0"
 aycore = "1.4.5-BETA"
 luaj = "3.0.1"
 junit = "5.11.4"
@@ -21,6 +24,7 @@ spigot-api-latest = { module = "org.spigotmc:spigot-api", version.ref = "spigot-
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper-api" }
 mythic = { module = "io.lumine:Mythic", version.ref = "mythic" }
 lumine-utils = { module = "io.lumine:LumineUtils", version.ref = "lumine-utils" }
+mythic-dist = { module = "io.lumine:Mythic-Dist", version.ref = "mythic-dist" }
 aycore = { module = "com.aystudio.core:AyCore", version.ref = "aycore" }
 luaj = { module = "org.luaj:luaj-jse", version.ref = "luaj" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }

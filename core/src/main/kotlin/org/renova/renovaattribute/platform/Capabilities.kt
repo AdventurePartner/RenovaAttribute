@@ -31,7 +31,12 @@ internal object Capabilities {
         }
     }
 
-    /** Instantiates an implementation from a compat module; call only after its probe passed. */
+    /**
+     * Instantiates an implementation from a compat module; call only after its probe passed.
+     * Where the call has no expected type (inside `lazy`, an untyped local), pass the interface
+     * as [T] explicitly: otherwise it is inferred from the other branch's concrete type and the
+     * unchecked result fails that cast.
+     */
     fun <T> create(className: String): T {
         @Suppress("UNCHECKED_CAST")
         return Class.forName(className, true, loader).getDeclaredConstructor().newInstance() as T
