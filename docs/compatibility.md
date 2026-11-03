@@ -5,6 +5,7 @@
 - **服务端**：Spigot、Paper、Purpur，**1.20.1 及以上**（含 1.21.x）。
 - **Java**：字节码为 Java 17。1.20.1–1.20.4 跑在 Java 17 上，1.20.5 起跑在 Java 21 上，两者都能加载。
 - **MythicMobs**（可选）：**5.6 及以上**。占位符按 MythicMobs 版本二选一（见下表）；其余用到的 Mythic 接口从 5.6.2 到 5.14.0-SNAPSHOT 签名完全一致。
+- **PlaceholderAPI**（可选）：**2.11 及以上**。提供 `%ra_<属性键>%`（按属性 format 格式化）与 `%ra_value_<属性键>%`（纯数值），开关为 `placeholderapi.enabled`。只用到 `PlaceholderExpansion`，core 直接以 2.11.6 编译，不需要单独的 compat 模块；只有 PlaceholderAPI 已启用时才会加载 `core/.../hooks/placeholderapi/` 里引用它的类。
 
 启动时控制台会打印平台选择结果，装了 MythicMobs 时还会多一行，排查问题时先看这两行：
 
@@ -17,7 +18,7 @@ MythicMobs 5.13.0-aad3f1c9 | placeholders=generic
 
 | 模块 | 编译依赖 | 内容 |
 |---|---|---|
-| `core` | spigot-api 1.20.1、Mythic 5.6.2、AyCore | 全部业务逻辑，以及每项能力的"基线实现"（任何受支持的服务端都能跑） |
+| `core` | spigot-api 1.20.1、Mythic 5.6.2、AyCore、PlaceholderAPI 2.11.6 | 全部业务逻辑，以及每项能力的"基线实现"（任何受支持的服务端都能跑） |
 | `compat-modern` | spigot-api 1.21.10 | 比 1.20.1 新、但 Spigot 也有的 API |
 | `compat-paper` | paper-api 1.21.10 | Paper 专有 API |
 | `compat-mythic` | Mythic-Dist 5.12.0 | MythicMobs 5.12 起的新占位符 API |

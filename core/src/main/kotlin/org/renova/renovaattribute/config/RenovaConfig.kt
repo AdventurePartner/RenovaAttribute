@@ -54,6 +54,8 @@ class RenovaConfig(config: FileConfiguration) {
     val mythicDamage = boolean(config, "mythicmobs.process-damage")
     val mythicIgnoreArmorBypassesDefense = optionalBoolean(config, "mythicmobs.ignore-armor-bypasses-defense", false)
 
+    val placeholderApiEnabled = optionalBoolean(config, "placeholderapi.enabled", true)
+
     val damageSettings = DamageSettings(
         enabled = damageEnabled,
         useVanillaBaseDamage = useVanillaBaseDamage,

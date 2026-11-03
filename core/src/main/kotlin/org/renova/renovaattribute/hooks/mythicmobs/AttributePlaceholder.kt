@@ -3,6 +3,7 @@ package org.renova.renovaattribute.hooks.mythicmobs
 import org.bukkit.entity.Entity
 import org.renova.renovaattribute.api.AttributeKey
 import org.renova.renovaattribute.core.AttributeRegistry
+import org.renova.renovaattribute.hooks.AttributeLookup
 import org.renova.renovaattribute.platform.Capabilities
 
 object AttributePlaceholder {
@@ -39,7 +40,7 @@ object AttributePlaceholder {
         if (!enabled) {
             return null
         }
-        return MythicAttributeLookup.get(entity, parseKey(argument))
+        return AttributeLookup.get(entity, parseKey(argument))
     }
 
     private fun parseKey(argument: String): AttributeKey {

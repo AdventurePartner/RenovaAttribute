@@ -8,7 +8,7 @@ import io.lumine.mythic.api.skills.conditions.ISkillMetaComparisonCondition
 import io.lumine.mythic.api.skills.placeholders.PlaceholderString
 import org.renova.renovaattribute.api.AttributeKey
 import org.renova.renovaattribute.core.AttributeRegistry
-import org.renova.renovaattribute.hooks.mythicmobs.MythicAttributeLookup
+import org.renova.renovaattribute.hooks.AttributeLookup
 import org.renova.renovaattribute.hooks.mythicmobs.MythicHook
 
 class AttributeCondition(
@@ -51,7 +51,7 @@ class AttributeCondition(
             return false
         }
         val key = AttributeKey.parse(rawKey, AttributeRegistry.defaultNamespace)
-        val actual = MythicAttributeLookup.get(entity.bukkitEntity, key)
+        val actual = AttributeLookup.get(entity.bukkitEntity, key)
         return NumericComparison.matches(actual, expression)
     }
 }

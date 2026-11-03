@@ -5,6 +5,7 @@ depend:
   - AyCore
 softdepend:
   - MythicMobs
+  - PlaceholderAPI
 author: AiYo
 api-version: '1.20'
 commands:

@@ -9,6 +9,7 @@ dependencies {
     compileOnly(libs.aycore)
     compileOnly(libs.mythic)
     compileOnly(libs.lumine.utils)
+    compileOnly(libs.placeholderapi)
 
     implementation(libs.luaj)
 

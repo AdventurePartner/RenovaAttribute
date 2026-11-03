@@ -15,6 +15,8 @@ lumine-utils = "1.21-SNAPSHOT"
 # 发行版里 LumineUtils 已经是 io.lumine.mythic.bukkit.utils，不受根工程的 relocate 影响。
 mythic-dist = "5.12.0"
 aycore = "1.4.5-BETA"
+# 只用到 PlaceholderExpansion，2.11.x 各版本签名一致。
+placeholderapi = "2.11.6"
 luaj = "3.0.1"
 junit = "5.11.4"
 
@@ -26,6 +28,7 @@ mythic = { module = "io.lumine:Mythic", version.ref = "mythic" }
 lumine-utils = { module = "io.lumine:LumineUtils", version.ref = "lumine-utils" }
 mythic-dist = { module = "io.lumine:Mythic-Dist", version.ref = "mythic-dist" }
 aycore = { module = "com.aystudio.core:AyCore", version.ref = "aycore" }
+placeholderapi = { module = "me.clip:placeholderapi", version.ref = "placeholderapi" }
 luaj = { module = "org.luaj:luaj-jse", version.ref = "luaj" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 

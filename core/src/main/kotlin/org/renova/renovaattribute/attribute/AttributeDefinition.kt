@@ -37,11 +37,12 @@ data class AttributeDefinition(
     }
 
     fun format(value: Double): String = when (format) {
-        AttributeFormat.NUMBER -> DECIMAL_FORMAT.format(value)
-        AttributeFormat.PERCENT -> "${DECIMAL_FORMAT.format(value * 100.0)}%"
+        AttributeFormat.NUMBER -> DECIMAL_FORMAT.get().format(value)
+        AttributeFormat.PERCENT -> "${DECIMAL_FORMAT.get().format(value * 100.0)}%"
     }
 
     companion object {
-        private val DECIMAL_FORMAT = java.text.DecimalFormat("0.##")
+        // PlaceholderAPI 变量可能在异步线程上格式化，DecimalFormat 不是线程安全的。
+        private val DECIMAL_FORMAT = ThreadLocal.withInitial { java.text.DecimalFormat("0.##") }
     }
 }

@@ -14,6 +14,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class PackagedResourcesTest {
     @TempDir
@@ -64,6 +65,7 @@ class PackagedResourcesTest {
             "damage.builtin-priorities",
             "lua.max-instructions-per-combat-script",
             "mythicmobs.ignore-armor-bypasses-defense",
+            "placeholderapi",
         ).forEach { yaml.set(it, null) }
         assertFalse(yaml.isSet("damage.sweep-ratio"))
 
@@ -74,6 +76,7 @@ class PackagedResourcesTest {
         assertEquals(ScriptErrorPolicy.SKIP_HANDLER, config.scriptErrorPolicy)
         assertEquals(BuiltinPriorities(), config.builtinPriorities)
         assertEquals(20_000, config.maxCombatLuaInstructions)
+        assertTrue(config.placeholderApiEnabled)
     }
 
     private fun copy(resource: String, destination: Path): Path {

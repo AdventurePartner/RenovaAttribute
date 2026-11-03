@@ -15,6 +15,7 @@ import org.renova.renovaattribute.damage.DamagePipeline
 import org.renova.renovaattribute.damage.VanillaDamageListener
 import org.renova.renovaattribute.formula.LuaFormulaEvaluator
 import org.renova.renovaattribute.hooks.mythicmobs.MythicHook
+import org.renova.renovaattribute.hooks.placeholderapi.PlaceholderApiHook
 import org.renova.renovaattribute.listener.EntityLifecycleListener
 import org.renova.renovaattribute.lore.EquipmentLoreSource
 import org.renova.renovaattribute.lore.EquipmentRefreshScheduler
@@ -58,6 +59,9 @@ class RenovaAttribute : AyPlugin() {
     override fun onDisable() {
         if (server.pluginManager.getPlugin("MythicMobs") != null && MythicHook.isInitialized()) {
             MythicHook.shutdown()
+        }
+        if (server.pluginManager.getPlugin("PlaceholderAPI") != null) {
+            PlaceholderApiHook.shutdown()
         }
         BuffSource.shutdown()
         Platform.equipment.shutdown()
@@ -131,6 +135,7 @@ class RenovaAttribute : AyPlugin() {
         command.tabCompleter = executor
 
         configureMythic(config)
+        configurePlaceholderApi(config)
 
         server.worlds.asSequence()
             .flatMap { it.livingEntities.asSequence() }
@@ -172,6 +177,12 @@ class RenovaAttribute : AyPlugin() {
         }
     }
 
+    private fun configurePlaceholderApi(config: RenovaConfig) {
+        if (server.pluginManager.isPluginEnabled("PlaceholderAPI")) {
+            PlaceholderApiHook.configure(config.placeholderApiEnabled)
+        }
+    }
+
     private fun configure(config: RenovaConfig) {
         EquipmentLoreSource.configure(config.equipmentLoreEnabled, config.equipmentLorePriority)
         EquipmentRefreshScheduler.configure(config.equipmentRefreshDelayTicks)
@@ -185,6 +196,7 @@ class RenovaAttribute : AyPlugin() {
     private fun applyReloadedConfiguration(config: RenovaConfig) {
         configure(config)
         configureMythic(config)
+        configurePlaceholderApi(config)
         AttributeServiceImpl.refreshAll()
         VanillaAttributeSync.syncAll()
     }

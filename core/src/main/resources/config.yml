@@ -118,3 +118,12 @@ mythicmobs:
   process-damage: true
   # 技能伤害设置了 ignoreArmor=true 时，是否同时跳过内建的属性防御减伤
   ignore-armor-bypasses-defense: false
+
+# PlaceholderAPI 集成（未安装 PlaceholderAPI 时忽略）
+placeholderapi:
+  # 是否注册 PlaceholderAPI 变量，返回玩家某个属性的最终值：
+  #   %ra_<属性键>%        按属性的 format 格式化，与 /ra info 一致，如 15%、12.5
+  #   %ra_value_<属性键>%  纯数值，如 0.15，供其他插件做数值比较
+  # 属性键可省略默认命名空间 renova，下划线等同连字符：%ra_physical_damage%、%ra_mypack:fire-damage%
+  # 不存在的属性键原样输出变量文本；玩家离线时返回该属性的默认值。
+  enabled: true

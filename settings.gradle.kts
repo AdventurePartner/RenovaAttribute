@@ -23,6 +23,10 @@ dependencyResolutionManagement {
             name = "Lumine"
             url = uri("https://mvn.lumine.io/repository/maven-public/")
         }
+        maven {
+            name = "PlaceholderAPI"
+            url = uri("https://repo.extendedclip.com/releases/")
+        }
         mavenCentral()
     }
 }
